@@ -4,6 +4,20 @@ This project uses Claude Code with team-based AI agent orchestration and Task-Dr
 
 ## Project Setup
 
+### Status Line
+
+The project includes a custom status line that displays context window usage in real-time:
+
+**Display**: `[Model] # [###---] | 42.5% used | ~115k left | session_id`
+
+- Visual progress bar with color coding (green → yellow → red)
+- Percentage and remaining tokens
+- Session ID tracking
+
+**Status lines available**: 9 versions in `.claude/status_lines/` (v6 is active)
+
+See `.claude/status_lines/README.md` for all versions and customization options.
+
 ### Hooks
 
 This project includes security and TD enforcement hooks in `.claude/hooks/`:
