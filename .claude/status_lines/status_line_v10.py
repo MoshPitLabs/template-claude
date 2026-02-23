@@ -71,6 +71,12 @@ def format_tokens(tokens):
         return f"{tokens / 1000000:.2f}M"
 
 
+def get_current_folder():
+    """Get the current working directory name."""
+    import os
+    return os.path.basename(os.getcwd())
+
+
 def get_git_branch():
     """Get the current git branch name."""
     try:
@@ -120,10 +126,12 @@ def generate_status_line(input_data):
     tokens_left_str = format_tokens(remaining_tokens)
     parts.append(f"{BLUE}~{tokens_left_str} left{RESET}")
 
-    # Git branch (rightmost)
+    # Current folder + git branch (rightmost)
+    folder = get_current_folder()
     branch = get_git_branch()
     if branch:
-        parts.append(f"{DIM}\ue0a0 {branch}{RESET}")
+        folder_part = f"{DIM}\uf07b {folder} {RESET}" if folder else ""
+        parts.append(f"{folder_part}{DIM}\ue0a0 {branch}{RESET}")
 
     return " | ".join(parts)
 
