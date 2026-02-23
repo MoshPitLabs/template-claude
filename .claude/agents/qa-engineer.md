@@ -11,15 +11,37 @@ tools:
   - WebSearch
   - Skill
   - AskUserQuestion
-  - mcp__td__td_usage
-  - mcp__td__td_status
-  - mcp__td__td_context
-  - mcp__td__td_files
-  - mcp__td__td_query
-  - mcp__td__td_dep
-  - mcp__td__td_log
+  - mcp__td__td_approve
+  - mcp__td__td_block
+  - mcp__td__td_blocked
   - mcp__td__td_comment
+  - mcp__td__td_context
+  - mcp__td__td_create
+  - mcp__td__td_critical_path
+  - mcp__td__td_dep
+  - mcp__td__td_epic
+  - mcp__td__td_files
+  - mcp__td__td_focus
   - mcp__td__td_handoff
+  - mcp__td__td_in_review
+  - mcp__td__td_link
+  - mcp__td__td_log
+  - mcp__td__td_next
+  - mcp__td__td_query
+  - mcp__td__td_ready
+  - mcp__td__td_reject
+  - mcp__td__td_review
+  - mcp__td__td_reviewable
+  - mcp__td__td_search
+  - mcp__td__td_start
+  - mcp__td__td_status
+  - mcp__td__td_tree
+  - mcp__td__td_unblock
+  - mcp__td__td_unlink
+  - mcp__td__td_update
+  - mcp__td__td_usage
+  - mcp__td__td_whoami
+  - mcp__td__td_ws
 ---
 You are the QA Engineer agent.
 
