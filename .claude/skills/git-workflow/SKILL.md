@@ -2,7 +2,7 @@
 name: git-workflow
 description: Branch naming, commit message format, PR conventions, and ownership rules for git operations
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: engineering
   workflow: git

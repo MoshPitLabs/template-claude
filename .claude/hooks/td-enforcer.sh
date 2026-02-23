@@ -18,14 +18,21 @@ mkdir -p "$LOG_DIR"
 log_event() {
   local event="$1"
   shift
-  local entry
-  entry=$(jq -n \
-    --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-    --arg event "$event" \
-    '$ARGS.positional' \
-    --args -- "$@" \
-    '{timestamp: $timestamp, event: $event}' + ($ARGS.positional | to_entries | map({(.key): .value}) | add // {}))
+  local -a jq_args=(
+    --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    --arg event "$event"
+  )
+  local filter='{timestamp: $timestamp, event: $event'
 
+  while [[ $# -ge 3 && "$1" == "--arg" ]]; do
+    jq_args+=(--arg "$2" "$3")
+    filter+=", $2: \$$2"
+    shift 3
+  done
+  filter+='}'
+
+  local entry
+  entry=$(jq -n "${jq_args[@]}" "$filter")
   echo "$entry" >> "$LOG_DIR/td_enforcer.jsonl"
 }
 
@@ -93,7 +100,7 @@ should_track_file() {
   for tracked_ext in "${tracked_extensions[@]}"; do
     if [[ "$ext" == "$tracked_ext" ]]; then
       # Exclude certain directories
-      if [[ "$file_path" =~ (node_modules|dist|build|\.git|target|vendor|\.next|\.nuxt|\.svelte-kit|out|coverage|__pycache__|\.opencode/logs|\.opencode/data) ]]; then
+      if [[ "$file_path" =~ (node_modules|dist|build|\.git|target|vendor|\.next|\.nuxt|\.svelte-kit|out|coverage|__pycache__|\.claude/logs) ]]; then
         return 1
       fi
       return 0

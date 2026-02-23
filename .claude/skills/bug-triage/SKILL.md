@@ -2,7 +2,7 @@
 name: bug-triage
 description: Classify, prioritize, and route incoming bug reports using a consistent severity rubric and triage decision tree
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: qa
   workflow: triage
@@ -108,7 +108,7 @@ When a P0 bug is confirmed:
 
 3. **Update the TD task log** every 30 minutes with status until resolved:
    ```
-   TD(action: "log", task: "td-XXXXXX", message: "P0 status update: [current state, next action]")
+   td_log(task: "td-XXXXXX", message: "P0 status update: [current state, next action]")
    ```
 
 4. **Do not defer or close a P0** without explicit team-lead sign-off.
@@ -137,9 +137,8 @@ After triage, create a TD bug task using the `td` tool. Map the triaged report f
 ### Example TD tool call
 
 ```
-TD(
-  action: "create",
-  task: "Login fails with valid credentials on Safari 17",
+td_create(
+  title: "Login fails with valid credentials on Safari 17",
   type: "bug",
   priority: "P1",
   points: 2,
@@ -151,5 +150,5 @@ TD(
 After creating the task, update the bug report's **Linked TD task** field with the returned task ID, and link the report file if it exists on disk:
 
 ```
-TD(action: "link", task: "td-XXXXXX", files: ["bugs/safari-login-2026-02-22.md"])
+td_files(task: "td-XXXXXX", files: ["bugs/safari-login-2026-02-22.md"])
 ```

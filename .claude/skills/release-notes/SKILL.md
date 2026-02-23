@@ -2,7 +2,7 @@
 name: release-notes
 description: Generate structured release notes from merged tasks, PR context, and review outcomes
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: maintainers
   workflow: release

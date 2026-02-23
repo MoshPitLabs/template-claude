@@ -1,0 +1,94 @@
+{
+  "$comment": "This is an example project settings file. Copy to .claude/settings.json to activate.",
+  "$comment2": "MCP servers should be configured in global ~/.claude/settings.json, not here.",
+  "$comment3": "Use .claude/mcp-servers/setup-td.sh to configure the TD MCP server.",
+  "$comment4": "statusLine and hooks must live in settings.json, NOT config.json. config.json is not read by Claude Code.",
+  "statusLine": {
+    "type": "command",
+    "command": "uv run .claude/status_lines/status_line_v6.py"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "**/.env",
+      "**/secrets.nix",
+      "**/*.pem",
+      "**/*.key",
+      "**/id_rsa*",
+      "**/credentials.json"
+    ]
+  }
+}

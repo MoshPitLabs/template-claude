@@ -2,7 +2,7 @@
 name: git-worktree-flow
 description: Execute one-task-per-worktree delivery with predictable branch, merge, and cleanup hygiene
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: engineering
   workflow: git

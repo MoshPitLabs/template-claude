@@ -2,7 +2,7 @@
 name: pr-quality-gate
 description: Apply an enforceable quality gate before opening or merging pull requests
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: engineering
   workflow: review
