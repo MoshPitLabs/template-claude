@@ -71,19 +71,10 @@ def format_tokens(tokens):
         return f"{tokens / 1000000:.2f}M"
 
 
-def get_repo_name():
-    """Get the repository name from the git root directory."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            timeout=1,
-        )
-        path = result.stdout.strip()
-        return path.split("/")[-1] if path else ""
-    except Exception:
-        return ""
+def get_current_folder():
+    """Get the current working directory name."""
+    import os
+    return os.path.basename(os.getcwd())
 
 
 def get_git_branch():
@@ -135,11 +126,11 @@ def generate_status_line(input_data):
     tokens_left_str = format_tokens(remaining_tokens)
     parts.append(f"{BLUE}~{tokens_left_str} left{RESET}")
 
-    # Repo name + git branch (rightmost)
-    repo = get_repo_name()
+    # Current folder + git branch (rightmost)
+    folder = get_current_folder()
     branch = get_git_branch()
     if branch:
-        prefix = f"{DIM}{repo}/{RESET}" if repo else ""
+        prefix = f"{DIM}{folder}/{RESET}" if folder else ""
         parts.append(f"{prefix}{DIM}\ue0a0 {branch}{RESET}")
 
     return " | ".join(parts)
