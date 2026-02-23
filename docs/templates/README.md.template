@@ -1,0 +1,157 @@
+<!-- DO NOT TOUCH THIS SECTION#1: START -->
+<div align="center">
+  <img src="docs/images/[YOUR-LOGO].png" alt="[YOUR PROJECT NAME] Logo" width="200" />
+  <h1>[YOUR PROJECT NAME]</h1>
+  <p>[Your project tagline]</p>
+
+  [![License](https://img.shields.io/badge/license-[LICENSE]-blue.svg)](LICENSE)
+  [![Version](https://img.shields.io/badge/version-[VERSION]-green.svg)](CHANGELOG.md)
+  [![Stars](https://img.shields.io/github/stars/[YOUR_ORG]/[YOUR_REPO]?style=social)](https://github.com/[YOUR_ORG]/[YOUR_REPO])
+</div>
+
+<br/>
+<!-- DO NOT TOUCH THIS SECTION#1: END -->
+
+# 🗃️ Overview
+
+[Describe the project briefly]
+
+<br/>
+
+## 📚 Project Structure
+
+[<relative folder path>](<actually linked file/folder>) <short description> <with optional [Link](link)
+
+<br/>
+
+## 📓 Project Components
+| Component                   | Responsibility                                                                            |
+| --------------------------- | :---------------------------------------------------------------------------------- |
+| **<Component Name>** | <Description> |
+| **<Component Name>** | <Description> |
+| **<Component Name>** | <Description> |
+| **<Component Name>** | <Description> |
+| **<Component Name>** | <Description> |
+| **<Component Name>** | <Description> |
+
+<br/>
+
+# 📐 Architecture
+
+[Create ASCII and Mermaid diagram of the architecture of this code base.]
+
+<br/>
+
+# 🚀 **[Header1]**
+
+> [!CAUTION]
+> Customizing system configurations, particularly those affecting operating systems, may lead to unforeseen effects and potentially disrupt your system's standard operations. Although I've personally tested these settings on my own hardware, they might not perform identically on your specific setup.
+> **I cannot assume responsibility for any problems that might result from implementing this configuration.**
+
+> [!WARNING]
+> You **must** examine the configuration details and adjust them according to your specific requirements before proceeding with using [YOUR PROJECT NAME].
+
+<br/>
+
+## 1. **[Header2]**
+
+### Prerequisites
+
+- [List your prerequisites here]
+
+### Installation
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+<br/>
+
+## 2. **[Header2]**
+
+```bash
+nix-shell -p git
+git clone https://github.com/[YOUR_ORG]/[YOUR_REPO]
+cd [YOUR_REPO]
+```
+
+<br/>
+
+## 3. **[Header2]**
+> [!TIP]
+> To ensure you understand what you're executing, it's advisable to review the code base or at minimum consult the documentation thoroughly prior to running [YOUR PROJECT NAME].
+
+### [Header3]
+
+<br/>
+
+### [Header3]
+
+<br/>
+
+### [Header3]
+
+<br/>
+
+# 📝 [Header1]
+
+<details>
+<summary>
+[description]
+</summary>
+
+
+</details>
+
+<details>
+<summary>
+[description]
+</summary>
+
+</details>
+
+<details>
+<summary>
+[description]
+</summary>
+
+</details>
+<br/>
+
+# 🖼️ Gallery
+
+<p align="center">
+   <img src="./.github/assets/screenshots/system-usage.png" style="margin-bottom: 15px;"/> <br>
+   Screenshots last updated <b>[YYYY-MM-DD]</b>
+</p>
+
+<br/>
+
+# 👥 Credits
+
+Other resources and links:
+
+  - [<Resource Title>](<Resource Link>): <Comment>
+  - [<Resource Title>](<Resource Link>): <Comment>
+
+<br/>
+
+<!-- DO NOT TOUCH THIS SECTION#2: START -->
+<!-- # ✨ Stars History -->
+
+<br/>
+
+<p align="center"><img src="https://api.star-history.com/svg?repos=[YOUR_ORG]/[YOUR_REPO]&type=Timeline&theme=dark" /></p>
+
+<br/>
+
+<p align="center"><img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/footers/gray0_ctp_on_line.svg?sanitize=true" /></p>
+
+<!-- end of page, send back to the top -->
+
+<div align="right">
+  <a href="#readme">Back to the Top</a>
+</div>
+<!-- DO NOT TOUCH THIS SECTION#2: END -->
+
+<!-- Links -->
+[<Resource Title>]: <Resource Link>

@@ -1,0 +1,89 @@
+# OpenCode Configuration Template
+
+# General Instructions (Project-Independent)
+
+## OpenCode File Locations
+
+| Component Type | Location | Purpose | Naming Convention |
+|----------------|----------|---------|-------------------|
+| **Plans** | `.opencode/plans/` | Implementation plans and design documents | `kebab-case.md` |
+| **Notes** | `.opencode/notes/` | Session notes, research, and observations | `YYYY-MM-DD-topic.md` |
+| **Commands** | `.opencode/commands/` | Slash commands (workflows, processes) | `kebab-case.md` |
+| **Agents** | `.opencode/agents/` | Specialized domain expertise agents | `kebab-case.md` |
+| **Skills** | `.opencode/skills/` | Bundled resources with scripts | `kebab-case/` |
+| **Plugins** | `.opencode/plugins/` | TypeScript plugins for automation & security | `kebab-case.ts` |
+| **Tools** | `.opencode/tools/` | Custom tool implementations for AI | `kebab-case.ts` |
+| **Documentation** | `.opencode/docs/` | Guides and reference documentation | `kebab-case.md` |
+
+---
+
+## Custom Tools / TD Task Tool
+
+**Location:** `.opencode/tools/td.ts`
+**Purpose:** Direct integration with the [TD CLI](https://github.com/marcus/td) for task-driven development.
+**Requirements:** TD CLI in PATH; `td init` run in project root.
+
+> Full TD reference: see [TD Workflow Skill](.opencode/skills/td-workflow/SKILL.md)
+
+---
+
+### Mandatory TD Instructions for Agents
+
+**CRITICAL: All AI agents MUST follow these TD requirements:**
+
+#### 1. Before ANY File Modifications (MANDATORY)
+
+Check TD status first:
+```typescript
+TD(action: "status")
+```
+Verify active task exists (`focus` or `inProgress` not empty). If NO active task: **STOP**, do not write/edit any files, ask user to start a task first.
+
+#### 2. When Using Sub-Agents via Task Tool (CRITICAL)
+
+Sub-agents **do NOT inherit TD enforcement**. Before invoking a sub-agent:
+1. Check `TD(action: "status")` and start a task if needed.
+2. Include this in the sub-agent prompt:
+
+```
+CRITICAL TD REQUIREMENT:
+Before modifying ANY files, you MUST:
+1. Run: TD(action: "status")
+2. Verify active task exists (focus or inProgress not empty)
+3. If no task: STOP and notify user to start task via TD Tool
+
+Current TD Context: [paste TD status output here]
+```
+
+After sub-agent completes, link modified files: `TD(action: "link", task: "TASK-123", files: ["file1.ts", "file2.ts"])`
+
+#### 3. At Session Start (MANDATORY)
+
+```typescript
+TD(action: "usage", newSession: true)
+```
+
+#### 4. Before Context Ends (ALWAYS MANDATORY)
+
+```typescript
+TD(
+  action: "handoff",
+  task: "TASK-123",
+  done: "what was completed",
+  remaining: "what still needs to be done",
+  decision: "key decisions made",
+  uncertain: "areas of uncertainty or questions"
+)
+```
+
+---
+
+## Resources
+
+### Internal Documentation
+- [Agent Index](.opencode/AGENTS_INDEX.md) — Complete component catalog
+
+### External Resources
+- [OpenCode Documentation](https://github.com/anomalyco/opencode) — Official repository
+
+---

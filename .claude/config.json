@@ -1,0 +1,63 @@
+{
+  "$schema": "https://claude.ai/schemas/config.json",
+  "hooks": {
+    "tool-call-before": [
+      {
+        "tool": "Bash",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Bash"
+        }
+      },
+      {
+        "tool": "Read",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Read"
+        }
+      },
+      {
+        "tool": "Write",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Write"
+        }
+      },
+      {
+        "tool": "Write",
+        "command": "./.claude/hooks/td-enforcer.sh",
+        "env": {
+          "TOOL_NAME": "Write"
+        }
+      },
+      {
+        "tool": "Edit",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Edit"
+        }
+      },
+      {
+        "tool": "Edit",
+        "command": "./.claude/hooks/td-enforcer.sh",
+        "env": {
+          "TOOL_NAME": "Edit"
+        }
+      },
+      {
+        "tool": "Glob",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Glob"
+        }
+      },
+      {
+        "tool": "Grep",
+        "command": "./.claude/hooks/security-check.sh",
+        "env": {
+          "TOOL_NAME": "Grep"
+        }
+      }
+    ]
+  }
+}

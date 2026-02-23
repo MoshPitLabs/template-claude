@@ -1,0 +1,415 @@
+import { tool } from "@opencode-ai/plugin"
+
+type SidecarAction =
+  | "create"
+  | "list"
+  | "status"
+  | "link"
+  | "remove"
+  | "merge-check"
+  | "cleanup"
+
+async function runGit(args: string[]) {
+  const cmd = Bun.$`git ${args}`.nothrow().quiet()
+  const result = await cmd
+  return {
+    exitCode: result.exitCode,
+    stdout: result.stdout.toString().trim(),
+    stderr: result.stderr.toString().trim(),
+  }
+}
+
+async function runTD(args: string[]) {
+  const cmd = Bun.$`td ${args}`.nothrow().quiet()
+  const result = await cmd
+  return {
+    exitCode: result.exitCode,
+    stdout: result.stdout.toString().trim(),
+    stderr: result.stderr.toString().trim(),
+  }
+}
+
+// Validates workspace name: ws-td-<id>-<slug>
+// Validates branch name: feature|bugfix|chore|hotfix/td-<id>-<slug>
+// Returns null if valid, error string if invalid
+function validateNaming(name: string, type: "workspace" | "branch"): string | null {
+  const workspacePattern = /^ws-td-[a-z0-9]+-[a-z0-9]+(?:-[a-z0-9]+)*$/
+  const branchPattern = /^(feature|bugfix|chore|hotfix)\/td-[a-z0-9]+-[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+  if (type === "workspace") {
+    return workspacePattern.test(name)
+      ? null
+      : "Invalid workspace name. Expected format: ws-td-<id>-<slug>"
+  }
+
+  return branchPattern.test(name)
+    ? null
+    : "Invalid branch name. Expected format: feature|bugfix|chore|hotfix/td-<id>-<slug>"
+}
+
+export default tool({
+  description:
+    "Manage Sidecar workspaces programmatically. Actions: create (git worktree + branch + optional TD link), list (all worktrees with linked tasks), status (branch/dirty/HEAD/task for a workspace), link (write .sidecar-task marker + td start), remove (git worktree remove + cleanup), merge-check (conflict/divergence report), cleanup (git worktree prune)",
+  args: {
+    action: tool.schema
+      .enum(["create", "list", "status", "link", "remove", "merge-check", "cleanup"])
+      .describe("Sidecar action to execute"),
+    name: tool.schema.string().optional().describe("Workspace name"),
+    path: tool.schema.string().optional().describe("Workspace path"),
+    baseBranch: tool.schema.string().optional().describe("Base branch for create action (default: main)"),
+    task: tool.schema.string().optional().describe("TD task ID for create/link actions"),
+    branchPrefix: tool.schema
+      .enum(["feature", "bugfix", "chore", "hotfix"])
+      .optional()
+      .describe("Branch prefix for create action (default: feature)"),
+    force: tool.schema.boolean().optional().describe("Force workspace removal"),
+    targetBranch: tool.schema
+      .string()
+      .optional()
+      .describe("Target branch for merge-check action (default: main)"),
+  },
+  async execute(input, context) {
+    const action = input.action as SidecarAction
+
+    // Check git is available
+    const gitCheck = await runGit(["--version"])
+    if (gitCheck.exitCode !== 0) {
+      return "git is not available in this environment"
+    }
+
+    switch (action) {
+      case "create": {
+        if (!input.name) return "Missing required argument: name"
+
+        // Validate workspace name
+        const wsError = validateNaming(input.name, "workspace")
+        if (wsError) return wsError
+
+        // Derive branch name from workspace name and branchPrefix
+        // ws-td-<id>-<slug> -> <prefix>/td-<id>-<slug>
+        const prefix = input.branchPrefix ?? "feature"
+        const wsMatch = input.name.match(/^ws-(td-[a-z0-9]+-[a-z0-9]+(?:-[a-z0-9]+)*)$/)
+        if (!wsMatch) return "Could not derive branch name from workspace name"
+        const branchName = `${prefix}/${wsMatch[1]}`
+
+        // Validate derived branch name
+        const branchError = validateNaming(branchName, "branch")
+        if (branchError) return branchError
+
+        // Derive worktree path from workspace name: ../worktrees/<task-id-part>
+        // Extract td-<id> from ws-td-<id>-<slug>
+        const taskIdMatch = input.name.match(/^ws-(td-[a-z0-9]+)-/)
+        const worktreePath = taskIdMatch
+          ? `../worktrees/${taskIdMatch[1]}`
+          : `../worktrees/${input.name}`
+
+        const baseBranch = input.baseBranch ?? "main"
+
+        // Create the git worktree with a new branch
+        const worktreeResult = await runGit([
+          "worktree", "add", worktreePath, "-b", branchName, baseBranch,
+        ])
+        if (worktreeResult.exitCode !== 0) {
+          return `Failed to create worktree: ${worktreeResult.stderr}`
+        }
+
+        // Write .sidecar-task marker file if task provided
+        if (input.task) {
+          if (!/^td-[a-z0-9]+$/.test(input.task)) {
+            return `Invalid task ID format: ${input.task}. Expected: td-<alphanumeric>`
+          }
+          const tdCheck = await runTD(["version"])
+          if (tdCheck.exitCode !== 0) {
+            return `Worktree created at ${worktreePath} (branch: ${branchName}) — TD not available, skipping td start`
+          }
+
+          const markerPath = `${worktreePath}/.sidecar-task`
+          try {
+            await Bun.write(markerPath, input.task + "\n")
+          } catch {
+            // Non-fatal: worktree created, just couldn't write marker
+            return `Worktree created at ${worktreePath} (branch: ${branchName}) — warning: could not write .sidecar-task marker`
+          }
+
+          // Start the TD task to link it to this session
+          const tdResult = await runTD(["start", input.task])
+          if (tdResult.exitCode !== 0) {
+            return `Worktree created at ${worktreePath} (branch: ${branchName}), .sidecar-task written — warning: td start ${input.task} failed: ${tdResult.stderr}`
+          }
+
+          return `Created workspace: ${input.name}\n  Worktree: ${worktreePath}\n  Branch: ${branchName}\n  Task: ${input.task}\n  TD started: ${tdResult.stdout}`
+        }
+
+        return `Created workspace: ${input.name}\n  Worktree: ${worktreePath}\n  Branch: ${branchName}`
+      }
+
+      case "list": {
+        const result = await runGit(["worktree", "list", "--porcelain"])
+        if (result.exitCode !== 0) {
+          return `Failed to list worktrees: ${result.stderr}`
+        }
+
+        // Parse porcelain output into structured entries
+        // Each worktree block is separated by a blank line
+        // Fields: worktree <path>, HEAD <sha>, branch refs/heads/<name> (or "detached")
+        const blocks = result.stdout.split("\n\n").filter(Boolean)
+        const worktrees: Array<{
+          path: string
+          head: string
+          branch: string
+          isMain: boolean
+          isDirty: boolean
+          linkedTask: string | null
+        }> = []
+
+        for (const [index, block] of Array.from(blocks.entries())) {
+          const lines = block.split("\n")
+          const pathLine = lines.find(l => l.startsWith("worktree "))
+          const headLine = lines.find(l => l.startsWith("HEAD "))
+          const branchLine = lines.find(l => l.startsWith("branch "))
+
+          const worktreePath = pathLine?.slice("worktree ".length) ?? ""
+          const head = headLine?.slice("HEAD ".length) ?? ""
+          const branch = branchLine
+            ? branchLine.slice("branch refs/heads/".length)
+            : "detached"
+
+          // Check dirty state
+          const statusResult = await runGit(["-C", worktreePath, "status", "--porcelain"])
+          const isDirty = statusResult.exitCode === 0 && statusResult.stdout.length > 0
+
+          // Read .sidecar-task marker
+          let linkedTask: string | null = null
+          const markerResult = await Bun.$`cat ${worktreePath}/.sidecar-task`.nothrow().quiet()
+          if (markerResult.exitCode === 0) {
+            linkedTask = markerResult.stdout.toString().trim() || null
+          }
+
+          worktrees.push({ path: worktreePath, head: head.slice(0, 8), branch, isMain: index === 0, isDirty, linkedTask })
+        }
+
+        if (worktrees.length === 0) return "No worktrees found"
+
+        const lines = worktrees.map(w =>
+          `${w.isMain ? "[main]" : "[worktree]"} ${w.branch} @ ${w.head}${w.isDirty ? " (dirty)" : ""}${w.linkedTask ? ` → ${w.linkedTask}` : ""}\n  path: ${w.path}`
+        )
+        return lines.join("\n")
+      }
+
+      case "status": {
+        if (!input.name && !input.path) return "Missing required argument: name or path"
+
+        // Resolve worktree path
+        let worktreePath: string
+        if (input.path) {
+          worktreePath = input.path
+        } else {
+          // Derive from workspace name: ws-td-<id>-<slug> -> ../worktrees/td-<id>
+          const taskIdMatch = input.name!.match(/^ws-(td-[a-z0-9]+)-/)
+          worktreePath = taskIdMatch
+            ? `../worktrees/${taskIdMatch[1]}`
+            : `../worktrees/${input.name!}`
+        }
+
+        // Get current branch
+        const branchResult = await runGit(["-C", worktreePath, "rev-parse", "--abbrev-ref", "HEAD"])
+        if (branchResult.exitCode !== 0) {
+          return `Failed to get branch for worktree at ${worktreePath}: ${branchResult.stderr}`
+        }
+        const branch = branchResult.stdout
+
+        // Get HEAD commit
+        const logResult = await runGit(["-C", worktreePath, "log", "-1", "--format=%H %s"])
+        const headLine = logResult.stdout || "no commits"
+        const headSha = headLine.split(" ")[0]?.slice(0, 8) ?? ""
+        const headMsg = headLine.split(" ").slice(1).join(" ")
+
+        // Get dirty state
+        const statusResult = await runGit(["-C", worktreePath, "status", "--porcelain"])
+        const isDirty = statusResult.exitCode === 0 && statusResult.stdout.length > 0
+        const dirtyFiles = isDirty ? statusResult.stdout.split("\n").filter(Boolean).length : 0
+
+        // Read .sidecar-task marker
+        let linkedTask: string | null = null
+        const markerResult = await Bun.$`cat ${worktreePath}/.sidecar-task`.nothrow().quiet()
+        if (markerResult.exitCode === 0) {
+          linkedTask = markerResult.stdout.toString().trim() || null
+        }
+
+        const lines = [
+          `Workspace: ${input.name ?? worktreePath}`,
+          `  Path:    ${worktreePath}`,
+          `  Branch:  ${branch}`,
+          `  HEAD:    ${headSha} ${headMsg}`,
+          `  State:   ${isDirty ? `dirty (${dirtyFiles} file${dirtyFiles !== 1 ? "s" : ""} modified)` : "clean"}`,
+          `  Task:    ${linkedTask ?? "(none)"}`,
+        ]
+        return lines.join("\n")
+      }
+
+      case "link": {
+        if (!input.task) return "Missing required argument: task"
+        if (!input.name && !input.path) return "Missing required argument: name or path"
+
+        // Validate task ID format
+        if (!/^td-[a-z0-9]+$/.test(input.task)) {
+          return `Invalid task ID format: ${input.task}. Expected: td-<alphanumeric>`
+        }
+
+        // Resolve worktree path
+        let worktreePath: string
+        if (input.path) {
+          worktreePath = input.path
+        } else {
+          const taskIdMatch = input.name!.match(/^ws-(td-[a-z0-9]+)-/)
+          worktreePath = taskIdMatch
+            ? `../worktrees/${taskIdMatch[1]}`
+            : `../worktrees/${input.name!}`
+        }
+
+        // Check TD is available
+        const tdCheck = await runTD(["version"])
+        if (tdCheck.exitCode !== 0) {
+          return "TD is not available in this environment. Install from https://github.com/marcus/td"
+        }
+
+        // Write .sidecar-task marker file
+        const markerPath = `${worktreePath}/.sidecar-task`
+        try {
+          await Bun.write(markerPath, input.task + "\n")
+        } catch (e) {
+          return `Failed to write .sidecar-task marker at ${markerPath}: ${e instanceof Error ? e.message : String(e)}`
+        }
+
+        // Start the TD task
+        const tdResult = await runTD(["start", input.task])
+        if (tdResult.exitCode !== 0) {
+          return `.sidecar-task written at ${markerPath} — warning: td start ${input.task} failed: ${tdResult.stderr}`
+        }
+
+        return `Linked task ${input.task} to workspace at ${worktreePath}\n  .sidecar-task written\n  TD started: ${tdResult.stdout}`
+      }
+
+      case "remove": {
+        if (!input.name && !input.path) return "Missing required argument: name or path"
+
+        // Resolve worktree path: prefer explicit path, else derive from name
+        let worktreePath: string
+        if (input.path) {
+          worktreePath = input.path
+        } else {
+          // Derive from workspace name: ws-td-<id>-<slug> -> ../worktrees/td-<id>
+          const taskIdMatch = input.name!.match(/^ws-(td-[a-z0-9]+)-/)
+          worktreePath = taskIdMatch
+            ? `../worktrees/${taskIdMatch[1]}`
+            : `../worktrees/${input.name!}`
+        }
+
+        // Remove .sidecar-task marker if present (best-effort, non-fatal)
+        await Bun.$`rm -f ${worktreePath}/.sidecar-task`.nothrow().quiet()
+
+        // Remove the git worktree
+        const removeArgs = ["worktree", "remove", worktreePath]
+        if (input.force) removeArgs.push("--force")
+
+        const removeResult = await runGit(removeArgs)
+        if (removeResult.exitCode !== 0) {
+          return `Failed to remove worktree at ${worktreePath}: ${removeResult.stderr}\nTip: use force: true to force removal of dirty worktrees`
+        }
+
+        return `Removed workspace at ${worktreePath}`
+      }
+
+      case "merge-check": {
+        if (!input.name && !input.path) return "Missing required argument: name or path"
+
+        // Resolve worktree path
+        let worktreePath: string
+        if (input.path) {
+          worktreePath = input.path
+        } else {
+          const taskIdMatch = input.name!.match(/^ws-(td-[a-z0-9]+)-/)
+          worktreePath = taskIdMatch
+            ? `../worktrees/${taskIdMatch[1]}`
+            : `../worktrees/${input.name!}`
+        }
+
+        const targetBranch = input.targetBranch ?? "main"
+
+        // Check for uncommitted changes
+        const statusResult = await runGit(["-C", worktreePath, "status", "--porcelain"])
+        const hasUncommitted = statusResult.exitCode === 0 && statusResult.stdout.length > 0
+        const uncommittedFiles = hasUncommitted
+          ? statusResult.stdout.split("\n").filter(Boolean).length
+          : 0
+
+        // Get divergence counts (commits ahead/behind target)
+        const divergeResult = await runGit([
+          "-C", worktreePath,
+          "rev-list", "--left-right", "--count",
+          `${targetBranch}...HEAD`
+        ])
+        let ahead = 0
+        let behind = 0
+        if (divergeResult.exitCode === 0) {
+          const parts = divergeResult.stdout.split(/\s+/)
+          behind = parseInt(parts[0] ?? "0", 10)
+          ahead = parseInt(parts[1] ?? "0", 10)
+        }
+
+        // Check for merge conflicts using modern merge-tree form (Git >= 2.38)
+        // --name-only: stdout lists one conflicting filename per line (empty on clean merge)
+        // Exit code: 0 = clean merge, 1 = conflicts, other = error
+        const mergeTreeResult = await runGit([
+          "-C", worktreePath,
+          "merge-tree", "--write-tree", "--name-only", "HEAD", targetBranch
+        ])
+
+        if (mergeTreeResult.exitCode !== 0 && mergeTreeResult.exitCode !== 1) {
+          return `Failed to run merge-check via git merge-tree --write-tree (requires Git >= 2.38): ${mergeTreeResult.stderr || mergeTreeResult.stdout || "unknown error"}`
+        }
+        const conflictingFiles = mergeTreeResult.exitCode === 1
+          ? mergeTreeResult.stdout.split("\n").filter(Boolean)
+          : []
+        const hasConflicts = conflictingFiles.length > 0
+        const report: string[] = [
+          `Merge-check: ${input.name ?? worktreePath} → ${targetBranch}`,
+          `  Uncommitted changes: ${hasUncommitted ? `${uncommittedFiles} file${uncommittedFiles !== 1 ? "s" : ""}` : "none"}`,
+          `  Commits ahead:  ${ahead}`,
+          `  Commits behind: ${behind}`,
+          `  Conflicts: ${hasConflicts ? `YES (${conflictingFiles.length} file${conflictingFiles.length !== 1 ? "s" : ""})` : "none"}`,
+        ]
+
+        if (hasConflicts) {
+          report.push("  ⚠️  Resolve conflicts before merging")
+        } else if (hasUncommitted) {
+          report.push("  ⚠️  Commit or stash changes before merging")
+        } else if (ahead === 0) {
+          report.push("  ✓  Nothing to merge (no commits ahead of target)")
+        } else {
+          report.push("  ✓  Ready to merge")
+        }
+
+        return report.join("\n")
+      }
+
+      case "cleanup": {
+        // Run git worktree prune to remove stale entries
+        const pruneResult = await runGit(["worktree", "prune", "--verbose"])
+        if (pruneResult.exitCode !== 0) {
+          return `Failed to prune worktrees: ${pruneResult.stderr}`
+        }
+
+        const output = pruneResult.stdout || pruneResult.stderr
+        if (!output) {
+          return "No stale worktrees found — nothing to clean up"
+        }
+
+        return `Cleaned up stale worktrees:\n${output}`
+      }
+
+      default:
+        return `Unsupported action: ${action}`
+    }
+  },
+})
