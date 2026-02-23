@@ -130,8 +130,8 @@ def generate_status_line(input_data):
     folder = get_current_folder()
     branch = get_git_branch()
     if branch:
-        prefix = f"{DIM}{folder}/{RESET}" if folder else ""
-        parts.append(f"{prefix}{DIM}\ue0a0 {branch}{RESET}")
+        folder_part = f"{DIM}\uf07b {folder} {RESET}" if folder else ""
+        parts.append(f"{folder_part}{DIM}\ue0a0 {branch}{RESET}")
 
     return " | ".join(parts)
 
