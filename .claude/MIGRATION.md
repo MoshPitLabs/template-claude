@@ -15,6 +15,7 @@ This project was originally configured for **OpenCode** with 5 TypeScript plugin
 |-------------------|------------------------|--------|
 | `.opencode/plugins/security.ts` | `.claude/hooks/security-check.sh` | ✅ Migrated |
 | `.opencode/plugins/td-enforcer.ts` | `.claude/hooks/td-enforcer.sh` | ✅ Migrated |
+| `.opencode/tools/td.ts` | `.claude/mcp-servers/td/` | ✅ Migrated |
 | `.opencode/plugins/logging.ts` | *(Claude Code native logging)* | ⚠️ Not migrated (not needed) |
 | `.opencode/plugins/notifications.ts` | *(Claude Code native notifications)* | ⚠️ Not migrated (not needed) |
 | `.opencode/plugins/post-stop-detector.ts` | *(No equivalent)* | ❌ Not migrated (too complex) |
@@ -40,6 +41,16 @@ This project was originally configured for **OpenCode** with 5 TypeScript plugin
 - Auto-logs file edits to TD
 - Logs events to `~/.claude/logs/td/td_enforcer.jsonl`
 - Gracefully handles TD not installed
+
+### ✅ TD CLI Tool Integration
+**OpenCode tool**: `td.ts`
+**Claude Code MCP server**: `.claude/mcp-servers/td/`
+
+- Exposes 33 TD CLI operations as structured MCP tools
+- Replaces single `td` tool with action parameter with individual tools per action
+- Tools prefixed with `td_` (e.g., `td_status`, `td_start`, `td_create`)
+- Full coverage: session management, task execution, dependencies, work sessions, queries, reviews
+- See `.claude/mcp-servers/td/README.md` for setup and usage
 
 ## Not Migrated
 

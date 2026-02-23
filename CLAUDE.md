@@ -30,9 +30,19 @@ Hooks are configured in `.claude/config.json` and run automatically on tool exec
 ### Required Dependencies
 
 - **TD CLI** - Task-Driven development CLI (https://github.com/MoshPitLabs/td)
-  - Required for td-enforcer.sh to work
+  - Required for td-enforcer.sh hook and MCP server to work
   - Install: Follow TD CLI installation instructions
   - Initialize in project: `td init`
+
+### MCP Servers
+
+The project includes an MCP server for TD CLI integration:
+
+- **TD MCP Server** - Exposes TD CLI as 33 structured tools for Claude Code
+  - Location: `.claude/mcp-servers/td/`
+  - Setup: See `.claude/mcp-servers/td/README.md`
+  - Tools: `td_status`, `td_start`, `td_create`, `td_log`, etc.
+  - Quick setup: Run `.claude/mcp-servers/setup-td.sh`
 
 ### Workflow
 
