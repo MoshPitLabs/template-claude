@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sync-opencode-config.sh
-# Sync the .opencode folder and opencode.json to multiple repositories.
+# Sync the .claude folder and .mcp.json to multiple repositories.
 #
 # Usage:
 #   ./sync-opencode-config.sh [OPTIONS] <target-dir> [repo1 repo2 ...]
@@ -19,9 +19,9 @@ VERBOSE=false
 BACKUP=true
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR_NAME=".opencode"
+CONFIG_DIR_NAME=".claude"
 SOURCE_CONFIG_DIR="$SOURCE_DIR/$CONFIG_DIR_NAME"
-SOURCE_CONFIG_FILE="$SOURCE_DIR/opencode.json"
+SOURCE_CONFIG_FILE="$SOURCE_DIR/.mcp.json"
 
 EXCLUDE_PATTERNS=(
   "logs/"
@@ -37,7 +37,7 @@ usage() {
   cat <<EOF
 Usage: $0 [OPTIONS] <target-dir> [repo1 repo2 ...]
 
-Sync the .opencode folder and opencode.json from this repository to other repositories.
+Sync the .claude folder and .mcp.json from this repository to other repositories.
 
 Arguments:
   target-dir             Directory containing repositories to sync to
@@ -47,7 +47,7 @@ Arguments:
 Options:
   --dry-run              Show what would be synced without changes
   --verbose, -v          Verbose output
-  --no-backup            Do not create timestamped backups of existing .opencode
+  --no-backup            Do not create timestamped backups of existing .claude
   --help, -h             Show this help
 
 Examples:
@@ -105,7 +105,7 @@ sync_to_repo() {
     else
       echo "  -> Would create new $CONFIG_DIR_NAME"
     fi
-    echo "  -> Would sync opencode.json"
+    echo "  -> Would sync .mcp.json"
     return 0
   fi
 
@@ -125,9 +125,9 @@ sync_to_repo() {
   rsync -a "${EXCLUDE_ARGS[@]}" "$SOURCE_CONFIG_DIR/" "$dest_config_dir/"
 
   if [[ -f "$SOURCE_CONFIG_FILE" ]]; then
-    cp "$SOURCE_CONFIG_FILE" "$repo_path/opencode.json"
+    cp "$SOURCE_CONFIG_FILE" "$repo_path/.mcp.json"
     if [[ "$VERBOSE" == true ]]; then
-      log_info "Synced opencode.json to: $repo_name"
+      log_info "Synced .mcp.json to: $repo_name"
     fi
   fi
 
@@ -177,7 +177,7 @@ if [[ ! -d "$SOURCE_CONFIG_DIR" ]]; then
 fi
 
 if [[ ! -f "$SOURCE_CONFIG_FILE" ]]; then
-  log_warn "Source opencode.json not found: $SOURCE_CONFIG_FILE (will skip)"
+  log_warn "Source .mcp.json not found: $SOURCE_CONFIG_FILE (will skip)"
 fi
 
 if [[ ! -d "$TARGET_DIR" ]]; then
