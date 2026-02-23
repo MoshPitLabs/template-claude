@@ -2,7 +2,7 @@
 name: acceptance-criteria-authoring
 description: Author clear, testable acceptance criteria for features, bugs, and chores using standard formats that QA can directly derive test cases from
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: product
   workflow: planning
@@ -51,7 +51,7 @@ Use for configuration, data integrity, structural, or non-behavioural criteria w
 
 **Example — chore: add skill file:**
 ```
-- File `.opencode/skills/foo/SKILL.md` exists with valid YAML frontmatter.
+- File `.claude/skills/foo/SKILL.md` exists with valid YAML frontmatter.
 - Frontmatter contains `name`, `description`, `license`, `compatibility`, and `metadata` keys.
 - No dead links appear in the document body.
 ```

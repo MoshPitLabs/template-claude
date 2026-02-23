@@ -8,13 +8,13 @@ This project uses Claude Code with team-based AI agent orchestration and Task-Dr
 
 The project includes a custom status line that displays context window usage in real-time:
 
-**Display**: `[Model] # [###---] | 42.5% used | ~115k left | session_id`
+**Display**: `[Model] # [###---] | 42.5% used | ~115k left |  branch-name`
 
 - Visual progress bar with color coding (green → yellow → red)
 - Percentage and remaining tokens
-- Session ID tracking
+- Current git branch
 
-**Status lines available**: 9 versions in `.claude/status_lines/` (v6 is active)
+**Status lines available**: 10 versions in `.claude/status_lines/` (v10 is active)
 
 See `.claude/status_lines/README.md` for all versions and customization options.
 
@@ -40,9 +40,11 @@ The project includes an MCP server for TD CLI integration:
 
 - **TD MCP Server** - Exposes TD CLI as 33 structured tools for Claude Code
   - Location: `.claude/mcp-servers/td/`
-  - Setup: See `.claude/mcp-servers/td/README.md`
+  - Setup: Run `.claude/mcp-servers/setup-td.sh` (configures global `~/.claude/settings.json`)
   - Tools: `td_status`, `td_start`, `td_create`, `td_log`, etc.
-  - Quick setup: Run `.claude/mcp-servers/setup-td.sh`
+  - Documentation: See `.claude/mcp-servers/td/SETUP-GUIDE.md`
+
+**Important**: MCP servers are configured in your **global** `~/.claude/settings.json` file, not in the project-specific `.claude/settings.json`. The setup script will handle this automatically.
 
 ### Workflow
 
@@ -61,7 +63,7 @@ The project includes an MCP server for TD CLI integration:
 
 ### Agent Team
 
-This project defines 6 specialized agents in `.opencode/agents/`:
+This project defines 6 specialized agents in `.claude/agents/`:
 
 - **team-lead** - Orchestrates delivery, delegates to role agents
 - **staff-engineer** - Produces TDDs, performs code reviews
@@ -72,7 +74,7 @@ This project defines 6 specialized agents in `.opencode/agents/`:
 
 ### Skills
 
-Available workflow skills in `.opencode/skills/`:
+Available workflow skills in `.claude/skills/`:
 - `git-worktree-flow` - One task per worktree execution
 - `td-workflow` - TD lifecycle enforcement
 - `tdd-authoring` - Technical design documents
@@ -117,5 +119,5 @@ This project was migrated from OpenCode to Claude Code. See `.claude/MIGRATION.m
 
 - Hook configuration: `.claude/hooks/README.md`
 - Migration details: `.claude/MIGRATION.md`
-- Agent team workflow: `.opencode/docs/agent-team-workflow.md`
-- Agent tools policy: `.opencode/docs/agent-tools-policy.md`
+- Agent definitions: `.claude/agents/`
+- Skills: `.claude/skills/`

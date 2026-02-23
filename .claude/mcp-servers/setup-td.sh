@@ -63,25 +63,55 @@ fi
 echo ""
 echo "✅ TD MCP Server built successfully!"
 echo ""
-echo "📝 Configuration Instructions"
-echo "=============================="
+
+# Configure global settings
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+BACKUP_SETTINGS="$HOME/.claude/settings.json.backup"
+
+echo "📝 Configuring Claude Code Settings"
+echo "===================================="
 echo ""
-echo "Add the following to your Claude Code settings file:"
-echo ""
-echo "Location: ~/.claude/settings.json"
-echo ""
-echo '{
+
+if [ -f "$CLAUDE_SETTINGS" ]; then
+    echo "✓ Found existing settings at $CLAUDE_SETTINGS"
+    echo "  Creating backup at $BACKUP_SETTINGS"
+    cp "$CLAUDE_SETTINGS" "$BACKUP_SETTINGS"
+
+    # Use jq to merge if available, otherwise manual merge
+    if command -v jq &> /dev/null; then
+        echo "  Merging TD MCP server configuration..."
+        jq ". + {mcpServers: (.mcpServers // {} | . + {td: {command: \"node\", args: [\"$TD_DIR/dist/index.js\"]}})}" "$CLAUDE_SETTINGS" > "$CLAUDE_SETTINGS.tmp"
+        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+        echo "  ✓ Configuration updated"
+    else
+        echo ""
+        echo "⚠️  jq not found - manual configuration needed"
+        echo ""
+        echo "Add this to your mcpServers in $CLAUDE_SETTINGS:"
+        echo ""
+        echo '"td": {'
+        echo '  "command": "node",'
+        echo '  "args": ["'"$TD_DIR"'/dist/index.js"]'
+        echo '}'
+    fi
+else
+    echo "✓ Creating new settings file at $CLAUDE_SETTINGS"
+    mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
+    cat > "$CLAUDE_SETTINGS" <<EOF
+{
   "mcpServers": {
     "td": {
       "command": "node",
-      "args": ["'"$TD_DIR"'/dist/index.js"]
+      "args": ["$TD_DIR/dist/index.js"]
     }
   }
-}'
+}
+EOF
+    echo "  ✓ Configuration created"
+fi
+
 echo ""
-echo "If you already have mcpServers configured, add the 'td' entry to the existing object."
-echo ""
-echo "After updating settings, restart Claude Code to load the MCP server."
+echo "⚠️  IMPORTANT: Restart Claude Code to load the MCP server"
 echo ""
 echo "🧪 Testing"
 echo "=========="

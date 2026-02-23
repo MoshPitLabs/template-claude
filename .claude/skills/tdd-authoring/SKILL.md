@@ -2,7 +2,7 @@
 name: tdd-authoring
 description: Author structured Technical Design Documents (TDDs) that translate task requirements into testable, reviewable design artifacts
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: engineering
   workflow: design
@@ -125,15 +125,15 @@ After completing a TDD, the staff-engineer must:
 1. **Save the TDD** to `specs/tdd/<task-id>-<short-description>.md`.
 2. **Log the TDD path** to TD:
    ```
-   TD(action: "log", message: "TDD drafted: specs/tdd/<filename>.md", logType: "result")
+   td_log(message: "TDD drafted: specs/tdd/<filename>.md", logType: "result")
    ```
 3. **Link the file** to the task:
    ```
-   TD(action: "link", task: "td-xxx", files: ["specs/tdd/<filename>.md"])
+   td_files(task: "td-xxx", files: ["specs/tdd/<filename>.md"])
    ```
 4. **Record the handoff** with full context:
    ```
-   TD(action: "handoff",
+   td_handoff(
      task: "td-xxx",
      done: "TDD drafted at specs/tdd/<filename>.md. Covers problem statement, two design options, decision rationale, risks, and acceptance mapping.",
      remaining: "Senior Engineer implementation pending team-lead routing.",

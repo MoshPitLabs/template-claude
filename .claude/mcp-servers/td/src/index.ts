@@ -7,7 +7,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 interface TDResult {
   exitCode: number;
@@ -17,7 +17,7 @@ interface TDResult {
 
 function runTD(args: string[]): TDResult {
   try {
-    const stdout = execSync(`td ${args.join(" ")}`, {
+    const stdout = execFileSync("td", args, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -450,7 +450,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 // Call tool handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args = {} } = request.params;
 
   // Check if TD is available
   const versionCheck = runTD(["version"]);

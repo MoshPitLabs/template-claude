@@ -2,7 +2,7 @@
 name: design-system
 description: Enforce consistent component naming, interaction patterns, accessibility standards, design tokens, and handoff conventions across all UI/UX design work
 license: MIT
-compatibility: opencode
+compatibility: claude-code
 metadata:
   audience: design
   workflow: design-system
@@ -346,7 +346,7 @@ When the design spec is ready for implementation:
 1. Set the document `**Status:**` field to `review`.
 2. Leave a TD comment on the linked task:
    ```
-   TD(action: "comment", task: "td-xxx", commentText: "Design spec ready at specs/design/<feature-slug>-design-spec.md. Status: review. Open questions: [list or 'none'].")
+   td_comment(task: "td-xxx", commentText: "Design spec ready at specs/design/<feature-slug>-design-spec.md. Status: review. Open questions: [list or 'none'].")
    ```
 3. If there are open questions blocking implementation, list them explicitly in the comment — do not leave them only in the document.
 
