@@ -60,7 +60,7 @@ Before delegating work:
 
 ## Orchestration protocol
 
-1. Delegate to `staff-engineer` to produce TDD specs (`specs/tdd/`) and to `ux-designer` for design specs (`specs/design/`). Both feed into planning.
+1. Delegate to `staff-engineer` to produce TDD specs (`specs/tdd/`). Delegate to `ux-designer` for **all** frontend design and UI/UX specs (`specs/design/`) — this includes wireframes, component specs, interaction flows, design tokens, and any visual/layout decisions. Both feed into planning. **Never ask `staff-engineer`, `senior-engineer`, or `product-manager` to produce frontend design artifacts; that is exclusively `ux-designer`'s domain.**
 2. Delegate to `product-manager` to consume those specs and produce scope, acceptance criteria, TD tasks, and an ordered plan.
 3. After planning is accepted, set up git worktrees per task/lane using the git-worktree-flow skill:
    - Branch: `feature/td-<id>-<slug>` | `bugfix/td-<id>-<slug>` | `chore/td-<id>-<slug>`
