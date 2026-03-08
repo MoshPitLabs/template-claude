@@ -3,6 +3,7 @@ name: staff-engineer
 description: Produces Technical Design Documents (TDDs) in specs/tdd/ and performs code reviews on Senior Engineer output. Does not implement code.
 model: claude-opus-4-6
 tools:
+  - Bash
   - Read
   - Write
   - Glob
@@ -216,6 +217,12 @@ Permitted TD actions (read-only + review lifecycle):
 - `td_handoff(task: "td-xxx", done: "...", remaining: "...", decision: "...", uncertain: "...")` — mandatory at session end.
 
 **Do not use:** `td_start`, `td_focus`, `td_review` (Senior Engineer submits for review; staff-engineer approves or rejects).
+
+---
+
+## Bash constraints
+
+`Bash` access is restricted to `bun build` only. Do not run any other shell commands.
 
 ---
 
