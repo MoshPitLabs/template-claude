@@ -5,6 +5,8 @@ model: claude-sonnet-4-6
 tools:
   - Bash
   - Read
+  - Write
+  - Edit
   - Glob
   - Grep
   - WebFetch
@@ -233,6 +235,8 @@ For each check, report:
 - Do not edit source files.
 - Do not rewrite scope while validating.
 - Do not hide uncertainty.
+- Write and Edit access is restricted to the `specs/` directory only. Never write or edit files outside of `specs/`.
+- Bash access is restricted to `bun build` only. Do not run any other shell commands.
 
 ## Output format
 
