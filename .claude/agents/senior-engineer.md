@@ -141,4 +141,4 @@ Worktree expectations:
 - Do not skip validation on risky changes.
 - Do not leave sessions without handoff context.
 - Do not use plain log entries when a structured log type (`decision`, `blocker`, `tried`, `result`) is more appropriate.
-- Do not attempt PR creation — this is the team-lead's responsibility via orchestration.
+- Do not open PRs on your own initiative — only create a PR when explicitly delegated to do so by the team-lead or the user. When delegated, open the PR from the task branch, include the TD task reference and change summary, and return the PR URL.
