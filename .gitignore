@@ -72,7 +72,6 @@ package-lock.json
 logs/
 
 # Claude Code project-specific settings (use global ~/.claude/settings.json instead)
-.claude/settings.json
 .claude/commands/
 
 # Claude Code MCP server config (machine-specific absolute paths)
