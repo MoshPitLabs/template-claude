@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           }
         ]
       },
@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           }
         ]
       },
@@ -32,11 +32,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           },
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
           }
         ]
       },
@@ -45,11 +45,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           },
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
           }
         ]
       },
@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           }
         ]
       },
@@ -67,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+            "command": "/home/moshpitcodes/Documents/Code/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
           }
         ]
       }
