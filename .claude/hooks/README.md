@@ -52,35 +52,35 @@ If you want these hooks to apply to all projects, edit `~/.claude/settings.json`
     "tool-call-before": [
       {
         "tool": "Bash",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       },
       {
         "tool": "Read",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       },
       {
         "tool": "Write",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       },
       {
         "tool": "Write",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+        "command": "./.claude/hooks/td-enforcer.sh"
       },
       {
         "tool": "Edit",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       },
       {
         "tool": "Edit",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/td-enforcer.sh"
+        "command": "./.claude/hooks/td-enforcer.sh"
       },
       {
         "tool": "Glob",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       },
       {
         "tool": "Grep",
-        "command": "/home/moshpitcodes/Development/MoshPitLabs/template-claude/.claude/hooks/security-check.sh"
+        "command": "./.claude/hooks/security-check.sh"
       }
     ]
   }
