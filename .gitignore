@@ -4,3 +4,4 @@
 .claude.backup.*/
 .claude/.template-manifest
 .DS_Store
+__pycache__/

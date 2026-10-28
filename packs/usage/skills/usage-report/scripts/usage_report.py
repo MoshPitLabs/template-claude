@@ -9,18 +9,21 @@ Writes a self-contained HTML page (styled with the host's theme CSS variables) a
 summary on stdout: {"html": path, "height": px, "totals": {...}, "projects": [...], "unpriced": [...]}.
 
 Usage: usage_report.py [--days N] [--project SUBSTRING]
-The HTML path defaults to ~/.cache/claude-usage-report/report.html; USAGE_REPORT_OUT overrides it. There is
+The HTML goes to ~/.cache/claude-usage-report/report.html; USAGE_REPORT_DIR overrides the directory. There is
 deliberately no output flag: read-only roles may run this command, and it must not write into a repository.
 """
 import argparse
 import glob
-import html
 import json
 import os
 import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
+
+sys.dont_write_bytecode = True  # no __pycache__ next to the scripts: read-only roles run them inside a repository
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # report_style lives next to this script
+import report_style as rs  # noqa: E402
 
 ROOT = os.path.expanduser("~/.claude/projects")
 # $ per million tokens: input, output, cache read. Cache writes cost 1.25x input (5 min) or 2x input (1 h).
@@ -143,10 +146,6 @@ def money(x):
     return f"${x / 1000:.1f}k" if x >= 10000 else f"${x:,.2f}" if x < 100 else f"${x:,.0f}"
 
 
-def tokens(x):
-    return f"{x / 1e9:.1f}B" if x >= 1e9 else f"{x / 1e6:.1f}M" if x >= 1e6 else f"{x / 1e3:.0f}k"
-
-
 def hours(s):
     return f"{s / 3600:,.1f} h" if s < 36000 else f"{s / 3600:,.0f} h"
 
@@ -155,66 +154,77 @@ def day(t):
     return datetime.fromtimestamp(t, timezone.utc).strftime("%b %d")
 
 
-def kpis(d):
-    items = [(money(d["cost"]), "API-equivalent cost"), (tokens(d["tokens"]), "processed tokens"),
-             (f'{d["prompts"]:,}', "human prompts"), (hours(d["seconds"]), "active agent time")]
-    return '<div class="kpis">' + "".join(f"<div><b>{v}</b><span>{l}</span></div>" for v, l in items) + "</div>"
+def days(first, last):
+    return day(first) if day(first) == day(last) else f"{day(first)}–{day(last)}"
 
 
-STYLE = """
-body { margin:0; font-family:var(--font-sans); color:var(--foreground); }
-.kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:8px 0 20px; border-bottom:1px solid var(--border); }
-.kpis b { display:block; font:500 26px/1.2 var(--font-mono); }
-.kpis span { font-size:12px; color:var(--muted-foreground); }
-h3 { display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 14px; font-size:16px; font-weight:500; }
-h3 small, .scope { font-size:12px; font-weight:400; color:var(--muted-foreground); }
-.row { display:grid; grid-template-columns:200px 1fr 80px; align-items:center; gap:14px; height:30px; cursor:default; }
-.name { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.track { height:14px; background:var(--secondary); border-radius:4px; }
-.bar { display:block; height:100%; border-radius:4px; background:var(--muted-foreground); opacity:.55; }
-.row.hi .bar { background:var(--chart-1); opacity:1; }
-.row:hover .bar { opacity:1; }
-.val { text-align:right; font:13px var(--font-mono); }
-p { margin:14px 0 0; font-size:12px; line-height:1.5; color:var(--muted-foreground); }
-.lead { margin-top:26px; padding-top:18px; border-top:1px solid var(--border); }
-.lead h4 { margin:0 0 10px; font-size:16px; font-weight:500; }
-.lead h4 small { margin-left:8px; font-size:12px; font-weight:400; color:var(--muted-foreground); }
-"""
+def plural(n, word):
+    return f"{n:,} {word}{'' if n == 1 else 's'}"
+
+
+TOP = 6  # rows per section; the rest are summarised in a "+N more" line
 
 
 def render(rows, scope):
     tot = {k: sum(r[k] for r in rows) for k in ("cost", "tokens", "prompts", "seconds")}
-    per = [r["cost"] / r["prompts"] for r in rows]
-    n_hi = 3 if len(rows) > 5 else 1
-    bars = []
-    for i, (r, v) in enumerate(zip(rows, per)):
-        tip = (f'{r["name"]}: {money(r["cost"])} over {r["prompts"]} prompts in {r["sessions"]} sessions · '
-               f'{tokens(r["tokens"])} tokens · {hours(r["seconds"])}')
-        bars.append(f'<div class="row{" hi" if i < n_hi else ""}" title="{html.escape(tip)}">'
-                    f'<span class="name">{html.escape(r["name"])}</span>'
-                    f'<span class="track"><span class="bar" style="width:{max(v / per[0] * 100, 0.8):.2f}%"></span></span>'
-                    f'<span class="val">{money(v)}</span></div>')
-    if len(rows) > n_hi:
-        rest = per[n_hi:]
-        caption = (f'The {"three most expensive projects cost" if n_hi == 3 else "most expensive project costs"} '
-                   f'{money(per[n_hi - 1]) + "–" if n_hi > 1 else ""}{money(per[0])} per human prompt; '
-                   f'the rest range from {money(min(rest))}–{money(max(rest))}. ')
-    else:
-        caption = ""
-    caption += "First-party API list prices; subagent usage included; agent time excludes gaps over 5 minutes."
-    lead = max(rows, key=lambda r: r["cost"])
-    span = (lead["last"] - lead["first"]) / 86400
-    page = f"""<!doctype html><html><head><meta charset="utf-8"><style>{STYLE}</style></head><body>
-<div class="scope">{html.escape(scope)}</div>
-{kpis(tot)}
-<h3>What one human prompt set in motion <small>API-equivalent dollars per prompt</small></h3>
-{"".join(bars)}
-<p>{caption}</p>
-<div class="lead"><h4>{html.escape(lead["name"])}<small>{day(lead["first"])}–{day(lead["last"])} · {span:.1f} days elapsed · {lead["sessions"]} sessions</small></h4>
-{kpis(lead)}</div>
-</body></html>"""
-    height = 20 + 90 + 60 + 30 * len(rows) + 50 + 150
-    return page, height, tot
+    by_cost = sorted(rows, key=lambda r: -r["cost"])
+    # Colour follows the project: the five most expensive keep their colour in every section.
+    color = {r["name"]: c for r, c in zip(by_cost, rs.COLORS)}
+    others = by_cost[len(rs.COLORS):]
+
+    def col(r):
+        return color.get(r["name"], rs.OTHER)
+
+    def tip(r):
+        return (f'{r["name"]}: {money(r["cost"])} over {plural(r["prompts"], "prompt")} in {plural(r["sessions"], "session")} · '
+                f'{money(r["cost"] / r["prompts"])} per prompt · {rs.tokens(r["tokens"])} tokens · {hours(r["seconds"])} · '
+                f'{days(r["first"], r["last"])}')
+
+    def pct(x, of):
+        return f"{x / of * 100:.0f}%" if of and x / of >= 0.01 else "<1%"
+
+    segments = [(r["name"], r["cost"], col(r), f'{r["name"]}: {money(r["cost"])} ({pct(r["cost"], tot["cost"])} of spend)')
+                for r in by_cost[:len(rs.COLORS)]]
+    if others:
+        o = sum(r["cost"] for r in others)
+        segments.append(("Other", o, rs.OTHER, f"{len(others)} other projects: {money(o)} ({pct(o, tot['cost'])} of spend)"))
+    legend = [(r["name"], money(r["cost"]), col(r)) for r in by_cost[:len(rs.COLORS)]]
+    if others:
+        legend.append((f"{len(others)} other projects", money(sum(r["cost"] for r in others)), rs.OTHER))
+
+    metrics = [
+        ("Dollars per human prompt", "What one prompt set in motion", lambda r: r["cost"] / r["prompts"], money, None),
+        ("Cost", "API-equivalent spend", lambda r: r["cost"], money, tot["cost"]),
+        ("Tokens processed", "Input, output and cache reads and writes", lambda r: r["tokens"], rs.tokens, tot["tokens"]),
+        ("Active agent time", "Main sessions and subagents; gaps over 5 minutes excluded", lambda r: r["seconds"], hours, tot["seconds"]),
+    ]
+    sections, heights = [], []
+    for title, sub, key, fmt, total in metrics:
+        ranked = sorted(rows, key=lambda r: -key(r))
+        shown = ranked[:TOP]
+        cells = [(r["name"], key(r), fmt(key(r)), col(r), tip(r)) for r in shown]
+        more = f"+{len(ranked) - TOP} more" if len(ranked) > TOP else ""
+        head = fmt(total) if total is not None else f"{money(tot['cost'] / tot['prompts'])} overall"
+        sections.append(rs.section(title, cells, key(ranked[0]), head, sub, more=more))
+        heights.append(rs.section_height(len(shown), bool(more)))
+
+    lead = by_cost[0]
+    share = lead["cost"] / tot["cost"] if tot["cost"] else 0
+    note = (f'<b>Largest project:</b> {rs.esc(lead["name"])}, {money(lead["cost"])} ({share * 100:.0f}% of spend) over '
+            f'{plural(lead["prompts"], "prompt")} and {plural(lead["sessions"], "session")}, {days(lead["first"], lead["last"])}. '
+            "Costs are recomputed from each response's token usage at first-party API list prices, subagents included; "
+            "they are not a bill (subscriptions, fast mode and partner pricing are not reflected).")
+    subtitle = (f'API-equivalent cost · {rs.tokens(tot["tokens"])} tokens · {tot["prompts"]:,} human prompts · '
+                f'{hours(tot["seconds"])} agent time · {scope}')
+    body = "\n".join([
+        rs.hero(money(tot["cost"]), subtitle),
+        rs.stack(segments),
+        rs.legend(legend),
+        rs.grid(sections),
+        rs.note(note),
+    ])
+    height = rs.HEAD_H - 16 + rs.grid_height(heights) + rs.NOTE_H
+    return rs.page(body), min(height, 2000), tot
 
 
 def main():
@@ -228,16 +238,17 @@ def main():
     if not rows:
         print(json.dumps({"error": "no sessions with human prompts match", "root": ROOT}))
         return 1
-    scope = ("Last " + (f"{args.days:g} days" if args.days else "") if args.days else "All sessions") + \
+    scope = (f"last {args.days:g} days" if args.days else "all sessions") + \
         (f' · projects matching "{args.project}"' if args.project else "") + " · this machine"
     page, height, tot = render(rows, scope)
-    out = os.environ.get("USAGE_REPORT_OUT") or os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
-                                   "claude-usage-report", "report.html")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    out_dir = os.environ.get("USAGE_REPORT_DIR") or os.path.join(
+        os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "claude-usage-report")
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, "report.html")
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(page)
     summary = {
-        "html": out, "height": min(height, 2000), "scope": scope,
+        "html": out, "height": height, "scope": scope,
         "totals": {"cost_usd": round(tot["cost"], 2), "tokens": tot["tokens"], "prompts": tot["prompts"],
                    "agent_hours": round(tot["seconds"] / 3600, 1)},
         "projects": [{"name": r["name"], "cost_usd": round(r["cost"], 2), "prompts": r["prompts"],
