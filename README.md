@@ -5,6 +5,7 @@ A layered **Claude Code** agent team for repositories: a domain-free core (`team
 - `core/` — agents, always-loaded team rules (roles, handoff brief, tiers, gates, extension points), `role-guard` and `verify-gate` hooks.
 - `packs/arma/` — Arma Reforger (Enfusion) mod development: engine rules, W1–W4 gates, 18 skills, enfusion-mcp permissions and Workbench guard hooks.
 - `packs/hytale/` — Hytale plugin and content development: server-pin and verification rules, 7 knowledge skills (API lookups, ECS/stats, assets/UI, persistence, worldgen, dungeons, compatibility), `/hytale-dev`, `/hytale-review`, `/hytale-release-check`, `/hytale-handoff`.
+- `packs/usage/` — `/usage-report`: Claude Code cost, tokens, prompts and agent time by project, from local transcripts at API list prices; renders inline in T3.
 - `packs/linear/` — Linear issue tracking (only `team-lead` writes; `/linear-start`, `/linear-file`).
 - `sync-claude-config.sh` — installs the layers into target repositories, merging `settings.json` and `.mcp.json`, and never touching repository-owned files.
 - `legacy/td-team/` — the previous `td`-based eight-agent setup, archived.
