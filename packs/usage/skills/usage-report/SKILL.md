@@ -10,7 +10,7 @@ Run the report script from this skill's base directory (shown above as "Base dir
 python3 -I <base directory>/scripts/usage_report.py $ARGUMENTS
 ```
 
-It reads `~/.claude/projects/` (main sessions and subagent transcripts), prices every API response at first-party list prices, writes a self-contained HTML report to `~/.cache/claude-usage-report/report.html`, and prints a JSON summary with `html` (the file), `height`, `totals`, `projects` and `unpriced_models`.
+It reads `~/.claude/projects/` (main sessions and subagent transcripts), prices every API response at first-party list prices, writes a self-contained HTML report to `~/.cache/claude-usage-report/report.html` (same look as `/context-report`, shared through `scripts/report_style.py`), and prints a JSON summary with `html` (the file), `height`, `totals`, `projects` and `unpriced_models`.
 
 Show the result:
 
