@@ -1,6 +1,6 @@
 # Design: generalized agent team with domain packs
 
-The team is a lean four-agent core that knows nothing about any engine, language or tracker. Domain knowledge arrives in packs layered on top at sync time. The design originated in `template-claude-armareforger` (Arma Reforger pack) and was generalized here; domain packs live under `packs/` (`arma`, `hytale`, `linear`).
+The team is a lean four-agent core that knows nothing about any engine, language or tracker. Domain knowledge arrives in packs layered on top at sync time. The design originated in `template-claude-armareforger` (Arma Reforger pack) and was generalized here; domain packs live under `packs/` (`arma`, `hytale`, `linear`, `usage`).
 
 ## Extension points
 

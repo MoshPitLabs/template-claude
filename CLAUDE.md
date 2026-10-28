@@ -1,6 +1,6 @@
 # template-claude
 
-Source of the Claude Code agent team for repositories. The team itself is domain-free (`core/`); domain knowledge and tracker integration live in packs (`packs/`): `arma` (Arma Reforger / Enfusion mods), `hytale` (Hytale plugins and content) and `linear` (Linear issue tracking). `sync-claude-config.sh` layers the packs on top of core and pushes the result into repositories. This file is not synced; each repository keeps its own `CLAUDE.md` for project rules. Design and rationale: `GENERALIZED-TEAM.md`.
+Source of the Claude Code agent team for repositories. The team itself is domain-free (`core/`); domain knowledge and tracker integration live in packs (`packs/`): `arma` (Arma Reforger / Enfusion mods), `hytale` (Hytale plugins and content), `linear` (Linear issue tracking) and `usage` (Claude Code cost and usage report). `sync-claude-config.sh` layers the packs on top of core and pushes the result into repositories. This file is not synced; each repository keeps its own `CLAUDE.md` for project rules. Design and rationale: `GENERALIZED-TEAM.md`.
 
 Replaces the earlier `td`-based eight-agent setup, kept for reference in `legacy/td-team/` (not synced, not loaded by Claude Code). Its eight roles live on in `core/agents/` rewritten against the layered rules; `td`, agent-teams mode, voting and the helper scripts did not carry over.
 
@@ -32,6 +32,9 @@ Replaces the earlier `td`-based eight-agent setup, kept for reference in `legacy
 | `packs/linear/agent-tools.conf`, `linear-readonly-tools.txt` | appended to agents' `tools:` | `mcp__plugin_mcp-servers_linear__*` for `team-lead`; the read-only list for the other roles |
 | `packs/linear/config/role-guard.linear.conf` | `.claude/config/` | team-lead may edit `.claude/local/` (for `linear.md`) |
 | `packs/linear/sync-check.sh` | not installed | Warns when `.claude/local/linear.md` is missing |
+| `packs/usage/skills/usage-report/` | `.claude/skills/` | `/usage-report [--days N] [--project TEXT]`: cost, tokens, human prompts, agent time and dollars per prompt by project, recomputed from `~/.claude/projects/` transcripts at API list prices (`scripts/usage_report.py`); shown inline through T3's `html_render`, otherwise as a table plus `~/.cache/claude-usage-report/report.html` |
+| `packs/usage/rules/usage-reporting.md` | `.claude/rules/` | Fills `Workflows` and `Domain rules` (the report covers every project on the machine) |
+| `packs/usage/config/role-guard.usage.conf`, `agent-tools.conf` | `.claude/config/`, appended to agents' `tools:` | Report command read-only for team-lead (no output flag; `USAGE_REPORT_OUT` overrides the path but a leading assignment is not read-only); `mcp__t3-code__html_render` for `team-lead` |
 | `legacy/td-team/` | never | Archived previous setup (`td` tracker, eight agents, scripts, specs) |
 | `.claude/local/`, `CLAUDE.md`, `.claude/settings.local.json` in a target | never | Repository-owned |
 
@@ -82,7 +85,7 @@ Without repository names, every git repository or Enfusion addon (a folder with 
 
 Run in a terminal, the script asks for whatever the command line leaves out: the packs (no `--pack`; Enter takes `linear`), the target directory (Enter takes the current directory), and which of the found repositories to sync (no repository names; Enter takes all). It then prints the equivalent command line and asks to proceed. `--yes` (or stdin/stderr not being a terminal) skips every prompt and keeps the defaults, so scripted use is unchanged.
 
-`--pack NAME` picks the pack (default `linear`; repeatable; `--pack arma` alone for a repository without Linear; a name with no `packs/<name>/` fails). The Arma and Hytale packs are opt-in: pass `--pack arma` or `--pack hytale` for those repositories. The script renders core + packs into a staging directory, backs up the files it replaces to `.claude.backup.<timestamp>/`, records what it installed in `.claude/.template-manifest`, and removes only template files that the template no longer ships. Skills or agents a repository adds itself, top-level settings keys it added, and MCP servers it added are kept. `.mcp.json` is written only when a pack ships one (the Arma pack's enfusion-mcp server) (`@TARGET_REPO@` → repository path).
+`--pack NAME` picks the pack (default `linear`; repeatable; `--pack arma` alone for a repository without Linear; a name with no `packs/<name>/` fails). The Arma, Hytale and usage packs are opt-in: pass `--pack arma`, `--pack hytale` or `--pack usage` where they apply. The script renders core + packs into a staging directory, backs up the files it replaces to `.claude.backup.<timestamp>/`, records what it installed in `.claude/.template-manifest`, and removes only template files that the template no longer ships. Skills or agents a repository adds itself, top-level settings keys it added, and MCP servers it added are kept. `.mcp.json` is written only when a pack ships one (the Arma pack's enfusion-mcp server) (`@TARGET_REPO@` → repository path).
 
 ## Extending
 
@@ -91,5 +94,6 @@ Run in a terminal, the script asks for whatever the command line leaves out: the
 - **Arma skills**: `packs/arma/skills/arma-<kebab-id>/SKILL.md` (every skill id carries the `arma-` prefix, and `name` equals the directory name) with `name` and a `description` that states when to load it. Add it to `Skills by work type` in `arma-enfusion.md`. Keep bodies short and move detail into `references/`, which the body must point to. Every engine fact needs a source: a compiled project file, vanilla source, or the wiki. Example paths name their repository.
 - **Linear**: the server comes from the user-level `mcp-servers` plugin, so the pack ships no `.mcp.json`. When the server gains tools, classify them into `packs/linear/settings.json` and, if read-only, into `linear-readonly-tools.txt`. Per-repository team, project, labels and states live in the target's `.claude/local/linear.md`.
 - **Do not use skill `paths:` frontmatter**: a path-scoped skill is unknown to the Skill tool until a matching file has been read in that session, so a reviewer working from `git diff` or a designer could not load it. Map work types to skills in the pack's rules file (`Skills by work type`) instead.
+- **Usage pack**: when a new model ships, add its prices to `PRICES` in `packs/usage/skills/usage-report/scripts/usage_report.py` (input, output, cache read per million tokens; cache writes are derived as 1.25x/2x input). The report lists models it could not price.
 - **Workflow skills**: `disable-model-invocation: true`; `context: fork` with `agent:` to run inside a subagent.
 - **Agents**: a `tools` list without `Agent` (subagents can spawn subagents otherwise); path limits go in `role-guard.sh` (core roles) or a pack's `role-guard.<pack>.conf`.
