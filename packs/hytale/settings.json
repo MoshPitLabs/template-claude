@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Edit(**/HytaleServer.jar)",
+      "Edit(**/Assets.zip)",
+      "Edit(**/auth.enc)",
+      "Write(**/HytaleServer.jar)",
+      "Write(**/Assets.zip)",
+      "Write(**/auth.enc)",
+      "Edit(**/universe/**)",
+      "Write(**/universe/**)"
+    ]
+  }
+}

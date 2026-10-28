@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "enfusion-mcp": {
+      "type": "stdio",
+      "command": "/etc/profiles/per-user/moshpitcodes/bin/node",
+      "args": [
+        "/home/moshpitcodes/Code/MoshPitLabs/enfusion-workbench-mcp-wsl/dist/index.js"
+      ],
+      "timeout": 600000,
+      "env": {
+        "ENFUSION_PROJECT_PATH": "@TARGET_REPO@",
+        "ENFUSION_LOGS_PATH": "/mnt/c/Users/moshpit/Documents/My Games/ArmaReforgerWorkbench/logs",
+        "ENFUSION_GAME_LOGS_PATH": "/mnt/c/Users/moshpit/Documents/My Games/ArmaReforger/logs",
+        "ENFUSION_WORKSHOP_PATH": "/mnt/c/Users/moshpit/Documents/My Games/ArmaReforgerWorkbench/addons",
+        "ENFUSION_WORKBENCH_PATH": "/mnt/d/SteamLibrary/steamapps/common/Arma Reforger Tools",
+        "ENFUSION_GAME_PATH": "/mnt/d/SteamLibrary/steamapps/common/Arma Reforger",
+        "ENFUSION_WORKBENCH_PORT": "5775"
+      }
+    }
+  }
+}

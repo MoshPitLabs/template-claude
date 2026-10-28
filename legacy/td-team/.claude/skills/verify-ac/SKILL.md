@@ -1,0 +1,253 @@
+---
+name: verify-ac
+description: >
+  Verify a td issue's acceptance criteria against the implementation diff (static, evidence-based — NOT
+  runtime app-behavior verification) and emit a structured verification report. Loaded into the calling
+  agent's context; the calling agent (`@sdet`) drives verification, the skill enforces the format authority
+  — verdict ladder, required sections, validation rules. No file written; the report is emitted into the
+  agent's context.
+  Trigger: "verify acceptance criteria", "verify td issue", "produce verification report" — NOT app/PR runtime checks (that is the bundled runtime `verify` skill, the name this skill was renamed away from to avoid collision).
+argument-hint: "<scope>"
+allowed-tools: ["AskUserQuestion", "Bash", "Glob", "Grep", "Read", "Monitor"]
+effort: xhigh
+---
+
+<!-- CANONICAL:BANNER:BEGIN -->
+> **CRITICAL:** (1) Do NOT commit ANY changes (no `git add`, no `git commit`, no `git push`) unless EXPLICITLY instructed by the user. (2) This is a leaf skill. You MUST NOT spawn sub-agents, invoke `Skill()` recursively, use `Agent()` or `SendMessage`, or form/manage a team. The calling agent handles peer messaging and td close/comment after this skill returns.
+<!-- CANONICAL:BANNER:END -->
+
+# Verify-AC — Acceptance-Criteria Verification
+
+You are the **Verifier**. You verify the artifact named by `<scope>` against its acceptance criteria and emit a structured verification report back to the calling agent's context. No file is written. The skill is the format authority — verdict ladder, required sections, severity, validation rules.
+
+<!-- CANONICAL:DOCS-PATHS-LOCAL:BEGIN -->
+**Docs paths (this skill).** Master: `.claude/skills/team-doctrine/references/docs-paths.md` — repo: `.claude/skills/team-doctrine/references/docs-paths.md` (maintained copy).
+- Writes: none — report into the calling agent's context.
+- Reads: `specs/ux/`, `specs/`, `specs/adr/`, the td issue body + comments (distilled design contracts + ACs per the Distillation Gate — docs-paths.md §Persistence & lifecycle).
+- Always singular specs/ — never specs/.
+- specs/tdd/ is ephemeral — Design/Planning input only; deletable any time after implementation (master: docs-paths.md).
+<!-- CANONICAL:DOCS-PATHS-LOCAL:END -->
+
+## Role Detection
+
+This skill is callable ONLY by `@sdet`. Match the calling agent's identifier (from prompt context); if the caller is not `@sdet`, ABORT.
+
+Abort message:
+
+```
+Error: Skill(verify-ac) is restricted to @sdet. Calling agent: {agent}.
+```
+
+## Argument Handling
+
+The argument is a single positional `<scope>` (free-text). No flags.
+
+If `<scope>` is missing or empty:
+
+```
+Error: Usage: Skill(verify-ac, "<scope>") — name what to verify (td issue ID, "uncommitted", "staged", branch name, or file paths). PR-scope review is @staff-engineer's via Skill(code-review-verdict, ...).
+```
+
+**Scope resolution** (apply rules in order; first match wins):
+
+<!-- COUPLING: scope-resolution — this table's Branch name, Literal `staged`, and File paths rows are BYTE-IDENTICAL to the same three rows in `code-review-verdict/SKILL.md`'s scope-resolution table; the branch-vs-file `./`-prefix ambiguity bullet in the Ambiguity rules below is near-identical (differs only by "on such a name"). Keep all four in sync across both files when either changes — decision record: TDD `specs/tdd/coordinated-shared-extraction-of-duplicated-skill.md` §4.4 (extraction rejected; coupling documented instead, per td-250). -->
+| Form | Detection | Sources |
+|---|---|---|
+| td issue ID | `td show {scope} --json` exits 0 (abort: `Error: td CLI required to resolve issue-ID scope. Re-invoke with branch name, "uncommitted", or file paths.` if CLI unavailable) | Pull issue + acceptance criteria + comments + file attachments via `td show`, `td show`, `td files`, `td show` |
+| Branch name | `git rev-parse --verify {scope}` exits 0 | `git diff main...{scope}` + `git log main...{scope} --oneline` + `git diff --stat main...{scope}` |
+| Literal `uncommitted` | exact match | `git diff` + `git diff --staged` + `git diff --stat HEAD` |
+| Literal `staged` | exact match | `git diff --staged` + `git diff --stat --staged` |
+| File paths (one or more, space-separated) | every token resolves via `Bash test -e {path}` | `Read` each file directly |
+
+**Ambiguity rules** (apply when multiple forms could match):
+
+- A token matching the td issue ID pattern (e.g., `td-123`, `ISS-45`) always tries td-issue resolution first. If `td show` exits non-zero (no such issue), fall through to subsequent forms.
+- A single token that is BOTH a valid branch name AND an existing file is treated as a branch. To force file-path scope, supply multiple tokens or prefix with `./` (e.g., `./main`).
+
+If `<scope>` matches none of the above, ABORT:
+
+```
+Error: Could not resolve <scope>: '{scope}'. Expected td issue ID, branch name, "uncommitted", "staged", or existing file paths.
+```
+
+If extra positional args follow `<scope>`, ignore them silently.
+
+**Comma-batched td IDs.** A `<scope>` of comma-separated td issue IDs (`td-45,td-46,td-47`) is N distinct verifications, not one merged scope — each issue carries its own acceptance criteria and verdict. Split on commas and run the full Pre-flight → Verification → Output cycle once per ID, emitting one report per issue. (Contrast `code-review-verdict`'s comma path-list, which forms a single scope: there the tokens are files in one diff; here they are independent issues.)
+
+## Doubling Rule
+
+Each verifier (whether paired `verifier-criteria` + `verifier-integration` under orchestration, or a standalone single invocation) runs this skill independently and emits its own report in this format — this skill is the single-verifier output-format authority, not the orchestrator. Spawning, eager dispatch, verdict reconciliation, degraded-fallback annotation, and fix-loop re-spawn are owned by the calling layer per `~/.claude/agents/team-lead.md` (Rule 7, Rule 8, step 14, step 15). Do not duplicate that logic here.
+
+## When to Use
+
+- `@sdet` is verifying a td issue's acceptance criteria against the implementation diff at any scope (issue, uncommitted, staged, branch, files).
+- A non-trivial change requires the FULL verification template with verdict ladder, evidence per criterion, and Issues Found.
+- A trivial change (typo, formatting, docs-only) may use LIGHT mode — see Verification Procedure below.
+- **Re-invocation after fix is expected.** When `@senior-engineer` ships fixes for prior BLOCK / ACCEPT-WITH-CAVEATS findings, `@sdet` re-invokes `Skill(verify-ac, "<scope>")` for a Round-2 pass on the new diff — carry-forward and end-to-end re-run rules are enforced at Pre-flight §3a.
+
+## When NOT to Use
+
+<!-- COUPLING: this skill is part of the report-emission family (code-review-verdict, verify-ac, design-qa, design-review). The "When NOT to Use" delegation routes below MUST stay in sync across the family — update all 4 in lockstep when adding/removing a sibling skill. The Doubling Rule section is also part of this family — keep its shape in sync across siblings per `.claude/agents/team-lead.md` Rule 8. -->
+- Production code-quality review against design dimensions — that's `Skill(code-review-verdict, ...)`, callable by `@staff-engineer` or `@security-engineer`.
+- Design QA against a `specs/ux/` spec for user-facing surfaces — that's `Skill(design-qa, ...)`, callable by `@ux-designer`.
+- Peer design review of a draft UX spec or design proposal — that's `Skill(design-review, ...)`, callable by `@ux-designer`.
+- Authoring TDDs, ADRs, PRDs, or UX specs — use the doc-authoring family (`tdd`, `adr`, `prd`, `ux-spec`).
+- Multi-agent consensus voting — use `Skill(vote, ...)`.
+
+## Pre-flight
+
+1. **Detect role** per Role Detection. ABORT if caller is not `@sdet`.
+2. **Resolve `<scope>`** per Argument Handling. ABORT if unresolvable.
+3. **Gather issue context** (td-issue scope only): description + acceptance criteria (`td show {id} --json`), comments (which supersede the description on conflict), file attachments, and activity log when context is unclear. The calling agent (`@sdet`) acknowledges the dispatch via SendMessage but does NOT `td move` for verification — verification is read-only on td workflow state per `~/.claude/agents/sdet.md` Rule 7 (moving regresses state / falsely signals implementation is still running), so there is no state move to undo. If file attachments are missing, surface as a finding (planning gap) rather than abort; the calling agent decides whether to BLOCK.
+3a. **Prior-verdict awareness** (Round-2+ re-verifications only). Before scoring criteria, scan `td show {id}` for prior verification reports. For each acceptance criterion previously marked PASS whose evidence file/test was NOT touched by the current diff (`git diff --stat` vs the prior round's commit), cite the prior round's verdict in the new report's evidence (`PASS — unchanged since round {N}: {prior evidence}`) rather than re-running its evidence command. Re-run the full test suite end-to-end regardless; never carry forward a FAILed criterion or an Additional Testing gap. Reduces per-round token spend on multi-round fix-loops.
+4. **Gather diff** per the resolved scope's source. **Do not substitute the implementer's completion comment for the diff** — completion claims describe what the implementer intended to ship; the diff describes what reached HEAD. Always Read the actual changed files and inspect `git diff` / `git diff --stat` before scoring criteria.
+5. **Empty-artifact guard**: if the resolved diff/scope produces no inspectable content (no files, no acceptance criteria, empty issue), ABORT:
+
+   ```
+   Error: Resolved scope produced no verifiable content — nothing to verify.
+   ```
+6. **Read related design docs** (scope to what the diff touches):
+   - If an acceptance criterion or issue context requires a `specs/tdd/` file to interpret → surface the finding: `Distillation gap: this issue's acceptance criteria or context require a specs/tdd/ file to interpret — a planning defect. Surface to team-lead/@project-manager for re-distillation; do not dereference the TDD.` A criterion that is uninterpretable without the missing context is scored FAIL (underspecified — planning defect) per Verification Procedure step 1, never resolved by locating the TDD.
+   - UX specs in `specs/ux/` for user-facing behavior.
+   - Project specs in `specs/` matching the changed areas only (e.g., `testing.md` for test changes, `security.md` for auth/crypto/secrets, `performance.md` for hot-path edits — skip the rest).
+6a. **Cross-issue contamination guard** (multi-issue sessions only). When this is the 2nd+ `Skill(verify-ac, ...)` invocation in the same session, identify whether the prior issue's verification produced persistent test artifacts (database rows, generated files outside the diff, env-var mutations, cached fixtures) that could affect the current issue's tests. If yes, the calling agent MUST reset the relevant state (drop test DB, `rm` generated artifacts, unset env vars) BEFORE running the current issue's tests; cite the reset commands in evidence. If reset is impractical (e.g., shared infra), surface a Test Coverage finding: `Cross-issue contamination risk: prior verification of {prior_issue} mutated {artifact}; current verification not isolated`.
+7. **Mandatory verification commands check.** When invoked under team-lead orchestration, the dispatch brief SHOULD contain a `Mandatory verification commands` subsection listing greps / awks / wcs / test commands to execute against the artifact. If the brief lacks this subsection AND the change is non-trivial (any code change beyond a typo/doc edit), surface as a Pre-flight finding (`Caller-contract gap: dispatch brief omits Mandatory verification commands subsection`) and proceed by selecting commands derived from the acceptance criteria; cite each command's evidence in the report. Do NOT silently substitute text-inspection for empirical execution per `~/.claude/agents/sdet.md` Epistemic Discipline.
+
+## Verification Procedure
+
+**Triage first.** The calling agent (`@sdet`) selects depth — LIGHT or FULL — per the judgment described in `~/.claude/agents/sdet.md`. This skill enforces the format once depth is chosen.
+
+### LIGHT mode
+
+For trivial fixes (typo, formatting, single-line config), docs-only changes, or changes already covered by existing passing tests:
+
+1. Run the relevant tests / verification command.
+2. Emit the one-line report defined in Output Contract § LIGHT Output (no template).
+
+If LIGHT cannot be issued (any failed test, any unmet or runtime-only criterion, any edge case worth surfacing), switch to FULL.
+
+### FULL mode
+
+Apply the full procedure. Scale evidence to risk.
+
+1. **Verify each acceptance criterion individually** — mark PASS, FAIL, or OUT-OF-SCOPE with specific evidence (test output, file/line reference, observed behavior). **When an AC names a literal command, run THAT command verbatim** — an equivalent or paraphrased command leaves the named path unverified, so a PASS on a substitute is a defect; cite the exact command in evidence. For **td-issue scope**, `.claude/scripts/ac_check.sh {id}` (repo: `.claude/scripts/ac_check.sh`) mechanizes this: it extracts the AC's literal command spans from the issue description (fenced bash/sh/shell blocks anywhere; inline command-shaped spans within the **Acceptance Criteria** section only) and runs each verbatim, emitting per-AC `[PASS|FAIL]` you cite directly as evidence — removing model-paraphrase risk. AC-shaped commands under a differently-named trailing heading are a known extraction gap; fall back to manual verbatim-run there. OUT-OF-SCOPE = verifiable only at runtime/render (live app behavior, rendered page/visual output, deployed-environment state). NEVER PASS a runtime-only criterion on a static proxy (file exists, ref present, build exit 0 — a green build can still ship broken renders); mark OUT-OF-SCOPE, name the runtime route (`design-qa` for `specs/ux` surfaces; bundled runtime `verify` otherwise), and leave dispatch to the calling agent.
+2. **Layer signals** — run the suite, trace key paths, diff output against baseline, verify generated artifacts are consumed correctly. Never rely on one signal.
+3. **Test beyond stated criteria** — empty/null/large input, invalid/malicious input, unavailable dependencies, boundary conditions. Surface findings under Additional Testing.
+4. **Analyze coverage** — what's tested, where, and which gaps are conscious decisions vs. real risk.
+5. **Decide verdict** per the ladder:
+
+| Verdict | Meaning |
+|---|---|
+| APPROVE | All acceptance criteria PASS (none OUT-OF-SCOPE); no Critical/High issues; edge cases handled or consciously deferred |
+| ACCEPT WITH CAVEATS | Core paths verified, but edge-case coverage incomplete, non-blocking issues remain, or OUT-OF-SCOPE criteria await runtime verification (caveat names the route) — calling agent annotates the caveats |
+| BLOCK | Acceptance criteria unmet, security/data-integrity tests fail, or critical coverage missing for high-risk paths |
+
+**Severity ladder for Issues Found:**
+
+| Severity | Meaning |
+|---|---|
+| Critical | Data loss, security exposure, crash, breaking-change without migration |
+| High | Major defect, no workaround, blocks acceptance |
+| Medium | Real defect with workaround, or significant edge-case gap |
+| Low | Cosmetic, minor, or defense-in-depth opportunity |
+
+**Common discipline:**
+
+- **Ask clarifying questions first** when intent is ambiguous — use `AskUserQuestion` per the calling agent's structural contract. Peer SendMessage is the calling agent's job, not this skill's. Do NOT ask when the answer is in the code.
+- **Honest critique.** Do NOT default to APPROVE. A justified BLOCK is more valuable than an unexamined APPROVE.
+- **Evidence over assertion.** Every PASS/FAIL claim cites the exact command run, file:line inspected, or observed behavior — not "tests pass" or "looks correct". Per `~/.claude/agents/sdet.md` Epistemic Discipline rule: banned framings ("clearly", "obviously", "should work", "100%") are evidence-free assertions and a validation failure for the verdict.
+- **Stream long commands.** For test suites, builds, or scans expected to take >30s, use `Monitor` with an until-loop on a terminal pattern (PASS/FAIL line, exit marker), not a blocking poll. For flaky-test confirmation (3-5x reruns), use Monitor with an exit-on-deviation pattern.
+
+## Output Contract
+
+Emit the verification report verbatim to the calling agent's context. Do NOT echo the raw diff. Do NOT add a preamble or trailing notes outside the format. **If the harness blocks this skill's invocation** (Stage-2 auto-mode classifier), render the verdict directly per THIS format authority — the FULL Output template (or LIGHT Output one-liner), the APPROVE / ACCEPT WITH CAVEATS / BLOCK ladder, and every required section — never an improvised structure.
+
+### LIGHT Output
+
+```
+APPROVE — tests pass: {command}; criteria met.
+```
+
+### FULL Output
+
+```
+## Verification: {Issue ID} — {Title}
+
+### Acceptance Criteria
+- [x] PASS / [ ] FAIL / [~] OUT-OF-SCOPE — {criterion 1} — {evidence: test output, file:line, observed behavior; OUT-OF-SCOPE cites the runtime route}
+- [x] PASS / [ ] FAIL / [~] OUT-OF-SCOPE — {criterion 2} — {evidence}
+- ... (one bullet per criterion)
+
+### Additional Testing
+- {edge case 1} — {result + evidence}
+- {edge case 2} — {result + evidence}
+- ... or "None beyond stated criteria"
+
+### Test Coverage
+- New tests: {file:test_name list, or "None"}
+- Key files: {paths exercised}
+- Coverage delta: {summary — branch/line, or "Not measured"}
+
+### Issues Found
+**Critical** ({count}):
+- {bug summary} — {severity rationale} — {repro: command + expected vs actual}
+- ... or "None"
+
+**High** ({count}):
+- ... or "None"
+
+**Medium** ({count}):
+- ... or "None"
+
+**Low** ({count}):
+- ... or "None"
+
+### Recommendation
+One of: **APPROVE** / **ACCEPT WITH CAVEATS** / **BLOCK** — {rationale tying verdict to criteria results and issues found}
+```
+
+## Validation Before Emit
+
+Mechanically validate the drafted report before emitting it. In LIGHT mode the emission is a single line — nothing to lint. In FULL mode, write the report verbatim to a UNIQUE-per-invocation staging file under `$TMPDIR` — a doubled verify panel shares one `$TMPDIR`, so a fixed `report.md` name races: one reviewer's staging write clobbers another's and the validator lints the wrong body. Allocate the name atomically with `mktemp` (`STAGE=$(mktemp "$TMPDIR/report-XXXXXX.md")`), then run the shared validator at the deployed path `.claude/scripts/report_lint.py` (repo: `.claude/scripts/report_lint.py`):
+
+```
+report_lint.py --skill verify-ac [--mode light] "$STAGE"
+```
+
+Pass `--mode light` for the LIGHT single-line emission (the validator short-circuits to exit 0 by contract — LIGHT has nothing to lint); omit `--mode` (default `full`) for the FULL template. Handle the exit code DISTINCTLY:
+
+- **exit 0** — emit the report in the calling agent's context.
+- **exit 1 (validation failure)** — ABORT. The calling agent corrects in its own context (quoting the script's stderr) and re-invokes `Skill(verify-ac, "<scope>")`:
+  ```
+  Error: validation failed: {section/field} — {detail}.
+  ```
+- **exit 2 (infra/usage — validator missing, `$TMPDIR` unwritable, unreadable staging file)** — do NOT hard-block. Emit the report anyway with the mandatory annotation line `lint not run (infra: {reason})` appended after the trailing confirmation line, and flag the infra failure to the caller. An advisory verdict a human/team-lead consumes downstream must not be suppressed by a lint-infrastructure hiccup.
+
+The validator mechanizes the shared, text-decidable checks: mode consistency (FULL template present), required sections in order, empty severity buckets explicit, verdict ↔ severity-count consistency (BLOCK / ACCEPT WITH CAVEATS / APPROVE ladder logic), recommendation on the verdict ladder, placeholder scan, and banned-confidence-phrase scan (scoped to Acceptance Criteria evidence, Additional Testing, Issues Found, Recommendation).
+
+Two checks stay the calling agent's responsibility — they need the td issue's AC list and semantic judgement the report text does not carry:
+
+- **FULL: every acceptance criterion has PASS, FAIL, or OUT-OF-SCOPE** — silent omission or "TBD" markers are defects; OUT-OF-SCOPE without a named runtime route is a defect.
+- **FULL: every PASS/FAIL has evidence** — `criterion met` without a test command, file/line, or observed-behavior fragment is a defect.
+
+## Save & Return
+
+No file is written (Output Contract owns the emission rules). FULL mode ends with the confirmation line:
+
+```
+Verification report emitted ({verdict}).
+```
+
+where `{verdict}` is `APPROVE`, `ACCEPT WITH CAVEATS`, or `BLOCK`. LIGHT mode's single APPROVE line is the entire emission — no trailing confirmation.
+
+The calling agent owns (in order):
+
+- Closing or commenting the td issue (the issue was already CLOSED by `@senior-engineer` at end of implementation — `td approve` here is a no-op): on APPROVE, `td log "..."`; on ACCEPT WITH CAVEATS, comment summarizing the caveats and route any follow-up via SendMessage `@project-manager` (no workflow-state move); on BLOCK, `td start <id>` followed by a blocking-criteria comment. `reopen` on BLOCK is the only legitimate verification state-change.
+- SendMessage to peers per the `~/.claude/agents/sdet.md` Inter-Agent Communication triggers (e.g., BLOCK → @senior-engineer + team-lead).
+- Escalating to vote per the vote triggers in `~/.claude/agents/sdet.md` — standalone: `Skill(vote, ...)`; team mode: NEVER `Skill(vote)` (nests a team) — `td vote create` + `delegation_request` to team-lead per `~/.claude/agents/sdet.md` §Using `/vote` for Consensus.
+
+**Silent-completion self-check (mandatory before turn-end).** The trailing `Verification report emitted (...)` line is a confirmation, NOT a delivery — the verdict was emitted into your context, not the caller's inbox. Before ending the turn, answer: "Did I SendMessage the structured verdict body (not summarized) to team-lead this same turn?" If no, the turn is incomplete regardless of how complete the in-context emission feels. The skill's in-context output is the working artifact; the SendMessage IS the deliverable.
+
+On any abort during Pre-flight, Verification Procedure, or Validation Before Emit: emit `Error: {one-line cause}` and end without producing a report.
+
+_Abort paths are specified inline at Argument Handling, Role Detection, and Pre-flight._

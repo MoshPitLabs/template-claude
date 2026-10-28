@@ -1,0 +1,268 @@
+{
+  "agent": "team-lead",
+  "model": "claude-sonnet-5",
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "outputStyle": "Proactive",
+  "autoUpdatesChannel": "latest",
+  "cleanupPeriodDays": 14,
+  "awaySummaryEnabled": false,
+  "feedbackSurveyRate": 0.0,
+  "includeGitInstructions": false,
+  "showThinkingSummaries": true,
+  "spinnerTipsEnabled": false,
+  "skillListingBudgetFraction": 0.02,
+  "teammateMode": "in-process",
+  "tui": "fullscreen",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "0",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "claude-fable-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8[1m]",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/statusline.sh\"",
+    "padding": 0
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-no-commit-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-tmp-write-hook.sh\""
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/task-completed-hook.sh\""
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/teammate-idle-hook.sh\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/subagent-report-hook.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-guard-hook.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable",
+    "allow": [
+      "Bash(bun run:*)",
+      "Bash(bun test:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo outdated:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo search:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo tree:*)",
+      "Bash(cargo update:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(cue:*)",
+      "Bash(docker images:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker ps:*)",
+      "Bash(find:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git branch:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(git show:*)",
+      "Bash(git status:*)",
+      "Bash(go build:*)",
+      "Bash(go doc:*)",
+      "Bash(go list:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go test:*)",
+      "Bash(go version:*)",
+      "Bash(go vet:*)",
+      "Bash(gofmt:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(jq:*)",
+      "Bash(ls:*)",
+      "Bash(make:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(rg:*)",
+      "Bash(sort:*)",
+      "Bash(staticcheck:*)",
+      "Bash(tail:*)",
+      "Bash(tar:*)",
+      "Bash(td:*)",
+      "Bash(test:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(xargs:*)",
+      "Bash(yarn build:*)",
+      "Bash(yarn lint:*)",
+      "Bash(yarn test:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:claude.ai)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:crates.io)",
+      "WebFetch(domain:docs.claude.ai)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(chown:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": [
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Edit(/Applications/**)",
+      "Edit(/Library/**)",
+      "Edit(/System/**)",
+      "Edit(~/.claude.json)",
+      "Edit(~/.codex/**)",
+      "Edit(~/.doppler/**)",
+      "Edit(~/.gemini/**)",
+      "Edit(~/.gnupg/**)",
+      "Edit(~/.kube/**)",
+      "Edit(~/.netrc)",
+      "Edit(~/.opencode/**)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.talos/**)",
+      "Edit(~/Desktop/**)",
+      "Edit(~/Downloads/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(/Applications/**)",
+      "Read(/Library/**)",
+      "Read(/System/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.claude.json)",
+      "Read(~/.codex/**)",
+      "Read(~/.doppler/**)",
+      "Read(~/.gemini/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.netrc)",
+      "Read(~/.opencode/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.talos/**)",
+      "Read(~/Desktop/**)",
+      "Read(~/Downloads/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": true,
+    "excludedCommands": [
+      "aws",
+      "docker",
+      "gh",
+      "git",
+      "kubectl",
+      "uv",
+      "xcrun"
+    ],
+    "filesystem": {
+      "allowWrite": [
+        "~/.cache/uv",
+        "~/.cargo/git",
+        "~/.cargo/registry",
+        "~/Library/Caches/pip",
+        "~/.claude/agent-memory",
+        "~/.claude/cache/docs"
+      ],
+      "denyRead": [
+        ".env",
+        ".env.*",
+        "~/.aws",
+        "~/.claude.json",
+        "~/.codex",
+        "~/.doppler",
+        "~/.gemini",
+        "~/.gnupg",
+        "~/.kube",
+        "~/.netrc",
+        "~/.opencode",
+        "~/.ssh",
+        "~/.talos",
+        "~/Desktop",
+        "~/Downloads"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "crates.io",
+        "static.crates.io",
+        "github.com",
+        "api.github.com"
+      ],
+      "allowLocalBinding": false
+    }
+  }
+}

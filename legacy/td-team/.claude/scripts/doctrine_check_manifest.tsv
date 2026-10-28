@@ -1,0 +1,30 @@
+# doctrine_check.sh manifest — parity-locked CANONICAL:<TAG> blocks that must
+# stay byte-identical across every carrier file listed for that tag.
+# Format: TAG<TAB>path/to/carrier.md   (paths are repo-root relative)
+# Append new tags/carriers as new lines; comments (#) and blank lines are
+# ignored. A tag needs at least 2 carrier lines to be checkable.
+PITFALLS	.claude/agents/ux-designer.md
+PITFALLS	.claude/agents/project-manager.md
+PITFALLS	.claude/agents/senior-engineer.md
+PITFALLS	.claude/agents/security-engineer.md
+PITFALLS	.claude/agents/sdet.md
+PITFALLS	.claude/agents/distinguished-engineer.md
+PITFALLS	.claude/agents/staff-engineer.md
+PITFALLS	.claude/skills/team-doctrine/references/pitfalls.md
+# (a separate <!-- CONFIG-ONLY --> line after :END), so the block itself is
+# byte-identical across all three carriers and IS registered below.
+# registered here so doctrine_check.sh enforces them in one place).
+# doc-authoring family — ARGUMENT_HANDLING / COLLISION_DIALOG / SAVE_AND_RETURN
+# are byte-identical across adr/prd/tdd/ux-spec (the 4 doc skills).
+ARGUMENT_HANDLING	.claude/skills/adr/SKILL.md
+ARGUMENT_HANDLING	.claude/skills/prd/SKILL.md
+ARGUMENT_HANDLING	.claude/skills/tdd/SKILL.md
+ARGUMENT_HANDLING	.claude/skills/ux-spec/SKILL.md
+COLLISION_DIALOG	.claude/skills/adr/SKILL.md
+COLLISION_DIALOG	.claude/skills/prd/SKILL.md
+COLLISION_DIALOG	.claude/skills/tdd/SKILL.md
+COLLISION_DIALOG	.claude/skills/ux-spec/SKILL.md
+SAVE_AND_RETURN	.claude/skills/adr/SKILL.md
+SAVE_AND_RETURN	.claude/skills/prd/SKILL.md
+SAVE_AND_RETURN	.claude/skills/tdd/SKILL.md
+SAVE_AND_RETURN	.claude/skills/ux-spec/SKILL.md
