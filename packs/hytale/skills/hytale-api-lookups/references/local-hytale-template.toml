@@ -1,0 +1,14 @@
+# Template for .claude/local/hytale.toml (repository-owned, never synced).
+# Sample values only, not an authoritative current server pin. Replace paths, version and
+# SHA-256 together after inspecting the installed resources. Once the repository has its
+# own validated file, do not overwrite it with these values.
+[resources]
+server_jar = "../Hytale Resources/Dedicated Server/Server/HytaleServer.jar"
+assets_zip = "../Hytale Resources/Dedicated Server/Assets.zip"
+server_version = "0.7.3"
+server_sha256 = "7b62da38b99af1b3a790edbda54f7eee34d8e2955c14505cf87deb5f7cbed9bb"
+
+[development]
+java_version = 25
+verify_command = "python3 scripts/verify.py"
+# Production access is project-owned; do not place credentials in this file.

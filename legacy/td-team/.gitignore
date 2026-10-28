@@ -1,0 +1,17 @@
+# td task tracker state (each clone runs `td init` to create its own)
+.todos/
+
+# render_verify scratch binaries
+**/.render_verify_*_bin
+
+# Claude Code hook state / debug artifacts (created at ~/.claude at runtime)
+*.debug
+*.log
+
+# OS / editor cruft
+.DS_Store
+*.swp
+
+# Python bytecode
+__pycache__/
+*.pyc
