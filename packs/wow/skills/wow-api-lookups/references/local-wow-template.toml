@@ -1,0 +1,34 @@
+# Template for .claude/local/wow.toml (repository-owned, never synced).
+# Sample values only, not an authoritative current build. Replace the Interface numbers, builds
+# and UI source tag together after checking the installed client (/dump GetBuildInfo() in game,
+# or the .build.info file in the game folder). Once the repository has its own validated file,
+# do not overwrite it with these values.
+
+# One table per flavor the addon supports. toc is the TOC file that flavor loads.
+[flavors.mainline]
+toc = "MyAddon_Mainline.toc"
+interface = 120001
+build = "12.0.1.00000"
+client_dir = "_retail_"
+
+[flavors.vanilla]
+toc = "MyAddon_Vanilla.toc"
+interface = 11507
+build = "1.15.7.00000"
+client_dir = "_classic_era_"
+
+[sources]
+# Local clone of https://github.com/Gethe/wow-ui-source, checked out at the tag for the pinned
+# build of the flavor being researched (branches: live, classic, classic_era, ...).
+ui_source = "../wow-ui-source"
+ui_source_tag = "12.0.1.00000"
+
+[game]
+# Read-only for agents: Logs/ for taint.log and FrameXML.log. Never edit WTF/.
+game_dir = "/mnt/c/Program Files (x86)/World of Warcraft"
+
+[development]
+lint_command = "luacheck ."
+test_command = ""            # e.g. "busted" when the repository has spec/
+verify_command = "luacheck ."
+# Release tokens (CurseForge, Wago, WoWInterface, GitHub) belong in CI secrets, never in this file.

@@ -1,6 +1,6 @@
 # template-claude
 
-Source of the Claude Code agent team for repositories. The team itself is domain-free (`core/`); domain knowledge and tracker integration live in packs (`packs/`): `arma` (Arma Reforger / Enfusion mods), `hytale` (Hytale plugins and content), `linear` (Linear issue tracking) and `usage` (Claude Code cost, usage and context-window reports). `sync-claude-config.sh` layers the packs on top of core and pushes the result into repositories. This file is not synced; each repository keeps its own `CLAUDE.md` for project rules. Design and rationale: `GENERALIZED-TEAM.md`.
+Source of the Claude Code agent team for repositories. The team itself is domain-free (`core/`); domain knowledge and tracker integration live in packs (`packs/`): `arma` (Arma Reforger / Enfusion mods), `hytale` (Hytale plugins and content), `wow` (World of Warcraft addons), `linear` (Linear issue tracking) and `usage` (Claude Code cost, usage and context-window reports). `sync-claude-config.sh` layers the packs on top of core and pushes the result into repositories. This file is not synced; each repository keeps its own `CLAUDE.md` for project rules. Design and rationale: `GENERALIZED-TEAM.md`.
 
 Replaces the earlier `td`-based eight-agent setup, kept for reference in `legacy/td-team/` (not synced, not loaded by Claude Code). Its eight roles live on in `core/agents/` rewritten against the layered rules; `td`, agent-teams mode, voting and the helper scripts did not carry over.
 
@@ -26,6 +26,12 @@ Replaces the earlier `td`-based eight-agent setup, kept for reference in `legacy
 | `packs/hytale/settings.json` | merged into `.claude/settings.json` | Denies Edit/Write of `HytaleServer.jar`, `Assets.zip`, `auth.enc` and `universe/` |
 | `packs/hytale/agent-tools.conf` | appended to agents' `tools:` | `Bash` for `scout` (role-guard keeps it read-only) so it can run `javap` and selective ZIP reads |
 | `packs/hytale/sync-check.sh` | not installed | Warns when `.claude/local/hytale.toml` or `scripts/verify.py` is missing, or `.team/`/`.codex/` remain from the Codex template |
+| `packs/wow/rules/wow-addons.md` | `.claude/rules/` | Fills the extension points for World of Warcraft addons: flavor and build pin (`.claude/local/wow.toml`), tier and hard-stop triggers (taint, SavedVariables, addon-message protocols, release uploads, gameplay automation), brief fields, skills by work type, `luacheck` dev loop with in-game checks for the user, checklists, report fields |
+| `packs/wow/skills/` | `.claude/skills/` | 9 knowledge skills (`wow-api-lookups`, `-toc-and-loading`, `-frames-ui`, `-secure-and-taint`, `-saved-variables`, `-events-performance`, `-addon-comms`, `-libraries-packaging`, `-compatibility`), 4 workflow skills (`/wow-dev`, `/wow-review`, `/wow-release-check`, `/wow-handoff`) |
+| `packs/wow/config/role-guard.wow.conf` | `.claude/config/` | team-lead may edit `.claude/local/`; `luacheck` is read-only |
+| `packs/wow/settings.json` | merged into `.claude/settings.json` | Denies Edit/Write of the game's `WTF/` (SavedVariables, account settings) and packager output `.release/` |
+| `packs/wow/agent-tools.conf` | appended to agents' `tools:` | `WebFetch` for `scout` so it can cite warcraft.wiki.gg |
+| `packs/wow/sync-check.sh` | not installed | Warns when `.claude/local/wow.toml`, a `.toc` file or `.luacheckrc` is missing |
 | `packs/linear/rules/linear-tracking.md` | `.claude/rules/` | Fills `Tracking`, `Intake`, `Brief domain fields`, `Domain rules` and report fields for Linear: only team-lead writes, when states move, what gets a comment, when issues are filed |
 | `packs/linear/skills/` | `.claude/skills/` | `linear-tracking` (knowledge: tools, setup file), `/linear-start`, `/linear-file` |
 | `packs/linear/settings.json` | merged into `.claude/settings.json` | Linear MCP permissions: read-only tools, `save_issue` and `save_comment` allowed; other writes ask; `merge_diff` denied |
@@ -80,13 +86,15 @@ To run a session in a target repository without the team-lead restrictions, star
 ./sync-claude-config.sh --pack arma --pack linear "/mnt/e/ArmaRefoger Projects" <repo>...
 # Hytale plugins, with Linear tracking
 ./sync-claude-config.sh --pack hytale --pack linear "/mnt/e/Hytale Projects" <repo>...
+# World of Warcraft addons, with Linear tracking
+./sync-claude-config.sh --pack wow --pack linear ~/Code/<org> <addon>...
 ```
 
 Without repository names, every git repository or Enfusion addon (a folder with a `*.gproj`) in the target directory is synced.
 
 Run in a terminal, the script asks for whatever the command line leaves out: the packs (no `--pack`; Enter takes `linear`), the target directory (Enter takes the current directory), and which of the found repositories to sync (no repository names; Enter takes all). It then prints the equivalent command line and asks to proceed. `--yes` (or stdin/stderr not being a terminal) skips every prompt and keeps the defaults, so scripted use is unchanged.
 
-`--pack NAME` picks the pack (default `linear`; repeatable; `--pack arma` alone for a repository without Linear; a name with no `packs/<name>/` fails). The Arma, Hytale and usage packs are opt-in: pass `--pack arma`, `--pack hytale` or `--pack usage` where they apply. The script renders core + packs into a staging directory, backs up the files it replaces to `.claude.backup.<timestamp>/`, records what it installed in `.claude/.template-manifest`, and removes only template files that the template no longer ships. Skills or agents a repository adds itself, top-level settings keys it added, and MCP servers it added are kept. `.mcp.json` is written only when a pack ships one (the Arma pack's enfusion-mcp server) (`@TARGET_REPO@` → repository path).
+`--pack NAME` picks the pack (default `linear`; repeatable; `--pack arma` alone for a repository without Linear; a name with no `packs/<name>/` fails). The Arma, Hytale, WoW and usage packs are opt-in: pass `--pack arma`, `--pack hytale`, `--pack wow` or `--pack usage` where they apply. The script renders core + packs into a staging directory, backs up the files it replaces to `.claude.backup.<timestamp>/`, records what it installed in `.claude/.template-manifest`, and removes only template files that the template no longer ships. Skills or agents a repository adds itself, top-level settings keys it added, and MCP servers it added are kept. `.mcp.json` is written only when a pack ships one (the Arma pack's enfusion-mcp server) (`@TARGET_REPO@` → repository path).
 
 ## Extending
 
