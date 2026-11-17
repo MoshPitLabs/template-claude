@@ -17,6 +17,15 @@ interface = 11507
 build = "1.15.7.00000"
 client_dir = "_classic_era_"
 
+# WoW Forever (Mainline-family): the community developer page reports Interface 16001, a
+# _Camelot.toc suffix (or a shared _Mainline.toc) and the _forever_ client folder, from early
+# builds. Check all three, and the build, against the installed client before relying on them.
+# [flavors.forever]
+# toc = "MyAddon_Camelot.toc"
+# interface = 16001
+# build = "1.60.1.00000"
+# client_dir = "_forever_"
+
 [sources]
 # Local clone of https://github.com/Gethe/wow-ui-source, checked out at the tag for the pinned
 # build of the flavor being researched (branches: live, classic, classic_era, ...).
