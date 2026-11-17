@@ -15,4 +15,6 @@ Order of sources, per flavor:
 
 Check deprecations (`Blizzard_Deprecated*` folders and `C_` namespace moves, for example `GetAddOnMetadata` → `C_AddOns.GetAddOnMetadata`) and whether the function is protected, needs a hardware event, or returns restricted values in combat on the pinned build.
 
+Do not trust a "deprecated → replacement" table from a guide, forum or this repository without the source: community maps of retail and Forever changes contain wrong entries and describe early builds. Look up the old global and the `C_` function in the generated documentation (or the wiki page's removal note) for each flavor, read the return shape (table or multiple values), and note when data loads asynchronously and can be `nil` (request it, then wait for the `*_DATA_LOAD_RESULT` event). A page that says "Removed in patch 12.0" means the function is gone on Mainline-family clients, not on Classic flavors.
+
 Return exact signatures, the flavor and build, file path and line at the tag or the URL, and what is still unverified at runtime. Never invent an event, payload argument, widget method, template or CVar to fill a gap.
